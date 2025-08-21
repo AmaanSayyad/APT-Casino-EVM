@@ -33,6 +33,7 @@ export default function Mines() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   const [gameStatus, setGameStatus] = useState({ isPlaying: false, hasPlacedBet: false });
+  const [gameHistory, setGameHistory] = useState([]);
   
   // AI Auto Betting State
   const [isAIActive, setIsAIActive] = useState(false);
@@ -182,6 +183,20 @@ export default function Mines() {
       ),
     },
   ], [gameStatus]);
+
+  // Handle game completion (only when game ends - cashout or mine hit)
+  const handleGameComplete = (result) => {
+    const newHistoryItem = {
+      id: Date.now(),
+      mines: result.mines || 0,
+      bet: `${result.betAmount || 0} APT`,
+      outcome: result.won ? 'win' : 'loss',
+      payout: result.won ? `${result.payout || 0} APT` : '0 APT',
+      multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
+      time: 'Just now'
+    };
+    setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+  };
 
   // Handle tab change
   const handleTabChange = (tabLabel) => {
@@ -373,7 +388,7 @@ export default function Mines() {
           transition={{ duration: 0.3 }}
           className="relative z-10"
         >
-          <Game betSettings={betSettings} onGameStatusChange={setGameStatus} />
+          <Game betSettings={betSettings} onGameStatusChange={setGameStatus} onGameComplete={handleGameComplete} />
         </motion.div>
       </motion.div>
     </div>
@@ -497,7 +512,7 @@ export default function Mines() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        {typeof MinesHistory === 'function' && <MinesHistory />}
+        {typeof MinesHistory === 'function' && <MinesHistory gameHistory={gameHistory} />}
       </motion.div>
       
       <motion.div 
