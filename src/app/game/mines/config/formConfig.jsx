@@ -4,8 +4,8 @@ export const manualFormConfig = {
       id: "betAmount",
       label: "Bet Amount (ETH)",
       type: "singleSelect",
-      options: [0.1, 0.5, 1, 2, 5, 5, 10],
-      defaultValue: 1,
+      options: [0.001, 0.01, 0.1, 1, 2, 5],
+      defaultValue: 0.001,
       placeholder: "Select bet amount",
     },
     {
@@ -27,8 +27,8 @@ export const autoFormConfig = {
       id: "betAmount",
       label: "Bet Amount (ETH)",
       type: "singleSelect",
-      options: [0.1, 0.5, 1, 2, 5, 10],
-      defaultValue: 1,
+      options: [0.001, 0.01, 0.1, 1, 2, 5],
+      defaultValue: 0.001,
       placeholder: "Select bet amount",
     },
     {
@@ -74,14 +74,14 @@ export const autoFormConfig = {
       id: "stopOnProfit",
       label: "Stop on Profit (ETH)",
       type: "text",
-      defaultValue: "5",
+      defaultValue: "0.1",
       placeholder: "Auto-stop at this profit",
     },
     {
       id: "stopOnLoss",
       label: "Stop on Loss (ETH)",
       type: "text",
-      defaultValue: "5",
+      defaultValue: "0.1",
       placeholder: "Auto-stop at this loss",
     },
     {

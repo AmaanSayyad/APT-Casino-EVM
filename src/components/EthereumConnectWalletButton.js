@@ -14,7 +14,7 @@ export default function EthereumConnectWalletButton() {
         // Check if wallet was previously connected
         const wasConnected = localStorage.getItem('wagmi.connected');
         if (wasConnected === 'true' && !isConnected) {
-          console.log('Attempting auto-reconnect...');
+          console.log('🔄 Attempting auto-reconnect...');
           
           // Try to find MetaMask connector first
           let connector = connectors.find(c => c.id === 'metaMask');
@@ -26,10 +26,11 @@ export default function EthereumConnectWalletButton() {
           
           if (connector) {
             await connect({ connector });
+            console.log('✅ Auto-reconnect successful');
           }
         }
       } catch (error) {
-        console.log('Auto-reconnect failed:', error);
+        console.log('❌ Auto-reconnect failed:', error);
         // Clear the connection flag if auto-reconnect fails
         localStorage.removeItem('wagmi.connected');
       }
@@ -40,28 +41,7 @@ export default function EthereumConnectWalletButton() {
     return () => clearTimeout(timer);
   }, [connectors, connect, isConnected]);
 
-  // Additional connection monitoring
-  useEffect(() => {
-    if (!isConnected) return;
-
-    // Monitor connection stability
-    const checkConnection = () => {
-      if (window.ethereum && window.ethereum.isConnected()) {
-        console.log('MetaMask connection is stable');
-      } else {
-        console.log('MetaMask connection lost, attempting reconnect...');
-        // Try to reconnect if connection is lost
-        const wasConnected = localStorage.getItem('wagmi.connected');
-        if (wasConnected === 'true') {
-          handleConnect();
-        }
-      }
-    };
-
-    // Check connection every 5 seconds
-    const interval = setInterval(checkConnection, 5000);
-    return () => clearInterval(interval);
-  }, [isConnected]);
+  // No automatic connection monitoring - user controls connection manually
 
   // MetaMask event listeners for better connection stability
   useEffect(() => {
@@ -71,7 +51,6 @@ export default function EthereumConnectWalletButton() {
       console.log('Accounts changed:', accounts);
       if (accounts.length === 0) {
         // User disconnected all accounts
-        localStorage.removeItem('wagmi.connected');
         console.log('All accounts disconnected');
       } else {
         // Account changed, but still connected
@@ -86,7 +65,7 @@ export default function EthereumConnectWalletButton() {
 
     const handleDisconnect = (error) => {
       console.log('MetaMask disconnected:', error);
-      localStorage.removeItem('wagmi.connected');
+      // Don't automatically reconnect - let user decide
     };
 
     // Add event listeners

@@ -40,9 +40,9 @@ export default function Mines() {
   const [showAISettings, setShowAISettings] = useState(false);
   const [aiSettings, setAISettings] = useState({
     strategy: 'balanced',
-    maxBet: 100,
-    stopLoss: 500,
-    targetProfit: 1000,
+    maxBet: 1,
+    stopLoss: 0.5,
+    targetProfit: 1,
     riskFactors: {
       adaptToHistory: true,
       maxConsecutiveLosses: 3,
@@ -78,13 +78,13 @@ export default function Mines() {
       const tilesToReveal = Math.floor(Math.random() * (tiles.max - tiles.min + 1)) + tiles.min;
       
       // Generate a random bet amount based on strategy
-      let betAmount = 50; // default
+      let betAmount = 0.1; // default
       if (strategy === 'conservative') {
-        betAmount = [10, 25, 50][Math.floor(Math.random() * 3)];
+        betAmount = [0.001, 0.01, 0.05][Math.floor(Math.random() * 3)];
       } else if (strategy === 'balanced') {
-        betAmount = [50, 100, 250][Math.floor(Math.random() * 3)];
+        betAmount = [0.05, 0.1, 0.25][Math.floor(Math.random() * 3)];
       } else if (strategy === 'aggressive') {
-        betAmount = [100, 250, 500][Math.floor(Math.random() * 3)];
+        betAmount = [0.1, 0.25, 0.5][Math.floor(Math.random() * 3)];
       }
       
       // Create AI auto betting settings
@@ -189,10 +189,10 @@ export default function Mines() {
     const newHistoryItem = {
       id: Date.now(),
       mines: result.mines || 0,
-      bet: `${result.betAmount || 0} ETH`,
+      bet: `${result.betAmount || '0.00000'} ETH`,
       outcome: result.won ? 'win' : 'loss',
-      payout: result.won ? `${result.payout || 0} ETH` : '0 ETH',
-      multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
+      payout: result.won ? `${result.payout || '0.00000'} ETH` : '0.00000 ETH',
+      multiplier: result.won ? `${result.multiplier || '0.00'}x` : '0.00x',
       time: 'Just now'
     };
     setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));

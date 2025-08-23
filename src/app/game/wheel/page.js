@@ -14,6 +14,7 @@ import { HiOutlineTrendingUp, HiOutlineChartBar } from "react-icons/hi";
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import { useNotification } from '@/components/NotificationSystem';
+import useWalletStatus from '@/hooks/useWalletStatus';
 
 // Import new components
 import WheelVideo from "./components/WheelVideo";
@@ -45,6 +46,7 @@ export default function Home() {
   const dispatch = useDispatch();
   const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
   const notification = useNotification();
+  const { isConnected } = useWalletStatus();
   
   // Use ref to prevent infinite loop in useEffect
   const isInitialized = useRef(false);
@@ -78,10 +80,11 @@ export default function Home() {
   const manulBet = async () => {
     if (betAmount <= 0 || isSpinning) return;
 
-    // Check if wallet is connected first (optional for local play)
-    if (!window.ethereum || !window.ethereum.account) {
-      console.log('No wallet connected, using local balance for demo');
-      // Continue with local balance for demo purposes
+    // Check if wallet is connected first
+    console.log('🔌 Wheel Bet - Wallet Status:', { isConnected, userBalance });
+    if (!isConnected) {
+      alert("Please connect your Ethereum wallet first to play Wheel!");
+      return;
     }
 
     // Check Redux balance (balance is already in ETH)
@@ -198,8 +201,8 @@ export default function Home() {
     noOfSegments,
   }) => {
     // Check if wallet is connected first
-    if (!window.ethereum || !window.ethereum.account) {
-      alert('Please connect your Ethereum wallet first');
+    if (!isConnected) {
+      alert('Please connect your Ethereum wallet first to play Wheel!');
       return;
     }
     
@@ -210,10 +213,10 @@ export default function Home() {
 
     for (let i = 0; i < numberOfBets; i++) {
       // Check Redux balance before each bet
-      const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
+      const currentBalance = parseFloat(userBalance || '0');
       
       if (currentBalance < currentBet) {
-        alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet} ETH but have ${currentBalance.toFixed(8)} ETH`);
+        alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet} ETH but have ${currentBalance.toFixed(5)} ETH`);
         break;
       }
 
@@ -221,8 +224,7 @@ export default function Home() {
       setHasSpun(false);
       
       // Deduct bet amount from Redux balance
-      const betAmountInOctas = currentBet * 100000000; // Convert to octas
-      const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
+      const newBalance = (parseFloat(userBalance || '0') - currentBet).toString();
       dispatch(setBalance(newBalance));
 
       // Calculate result position

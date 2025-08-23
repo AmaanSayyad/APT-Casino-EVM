@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cn } from "../../lib/utils";
 import Image from "next/image";
 import coin from "../../../public/coin.png";
+import useWalletStatus from '@/hooks/useWalletStatus';
 // import { wheelDataByRisk } from "./GameWheel"; // Make sure this is exported
 
 const BettingPanel = ({
@@ -21,6 +22,7 @@ const BettingPanel = ({
   isSpinning
 }) => {
   
+  const { isConnected } = useWalletStatus();
   const [inputValue, setInputValue] = useState('0');
 
   const handleInputChange = (e) => {
@@ -48,9 +50,15 @@ const BettingPanel = ({
       <div className="mb-4 p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-300">Balance:</span>
-          <span className="text-sm text-green-300 font-medium">
-            {balance.toFixed(5)} ETH
-          </span>
+          {isConnected ? (
+            <span className="text-sm text-green-300 font-medium">
+              {balance.toFixed(5)} ETH
+            </span>
+          ) : (
+            <span className="text-sm text-red-300 font-medium">
+              Connect Wallet
+            </span>
+          )}
         </div>
       </div>
 

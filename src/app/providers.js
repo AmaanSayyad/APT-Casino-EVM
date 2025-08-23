@@ -27,6 +27,7 @@ export default function Providers({ children }) {
 
   // Wagmi configuration with MetaMask and persistence
   const config = createConfig({
+    autoConnect: true, // Auto-connect to previously connected wallet
     chains: [sepolia],
     connectors: [
       metaMask({

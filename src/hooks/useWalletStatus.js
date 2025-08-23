@@ -12,7 +12,8 @@ import { useAccount, useConnect, useDisconnect } from 'wagmi';
 const WalletStatusContext = createContext(null);
 
 export function WalletStatusProvider({ children }) {
-  const isDev = process.env.NODE_ENV === 'development';
+  // Always use real wallet - no dev wallet
+  const isDev = false;
 
   const { 
     address: account,
@@ -117,23 +118,42 @@ export function WalletStatusProvider({ children }) {
     setError(null);
   }, []);
 
-  const currentStatus = isDev
-    ? devWallet
-    : {
-        isConnected: connected,
-        address: account?.address,
-        chain: { 
-          id: 'ethereum_testnet', 
-          name: 'Ethereum Testnet' 
-        },
-      };
+  const currentStatus = {
+    isConnected: !!connected && !!account, // Only connected if we have both connected and address
+    address: account, // account is already the address string
+    chain: network,
+  };
+
+  // Debug currentStatus calculation
+  console.log('🔍 currentStatus calculation:', {
+    connected,
+    account,
+    accountAddress: account, // account is already the address
+    network,
+    finalIsConnected: !!connected && !!account
+  });
 
   useEffect(() => {
     console.log('🔌 Ethereum Wallet connection changed:');
+    console.log('=== CURRENT STATUS ===');
     console.log('Connected:', currentStatus.isConnected);
     console.log('Address:', currentStatus.address);
     console.log('Chain:', currentStatus.chain);
-  }, [currentStatus]);
+    console.log('=== RAW WAGMI VALUES ===');
+    console.log('Raw connected:', connected);
+    console.log('Raw account:', account);
+    console.log('Raw network:', network);
+    console.log('=== ENVIRONMENT ===');
+    console.log('Is Dev:', isDev);
+    console.log('Dev Wallet:', devWallet);
+    console.log('=== LOCAL STORAGE ===');
+    console.log('Dev wallet state:', localStorage.getItem('dev-wallet-state'));
+    console.log('Wagmi storage:', localStorage.getItem('aptcasino.wallet'));
+    console.log('=== WINDOW ETHEREUM ===');
+    console.log('Window ethereum exists:', !!window.ethereum);
+    console.log('Window ethereum connected:', window.ethereum?.isConnected?.());
+    console.log('Window ethereum accounts:', window.ethereum?.selectedAddress);
+  }, [currentStatus, connected, account, network, isDev, devWallet]);
 
   return (
     <WalletStatusContext.Provider

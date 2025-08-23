@@ -253,15 +253,22 @@ export default function Navbar() {
   // Check if wallet was previously connected on page load
   useEffect(() => {
     const checkWalletConnection = async () => {
-      // Check if Ethereum wallet extension is available
-      if (window.ethereum && window.ethereum.account) {
-        console.log('Wallet already connected on page load');
-        // The wallet adapter should automatically reconnect
+      // Check if wallet was previously connected
+      const wasConnected = localStorage.getItem('wagmi.connected');
+      if (wasConnected === 'true') {
+        console.log('🔄 Wallet was previously connected, restoring balance...');
+        
+        // Restore balance from localStorage
+        const savedBalance = localStorage.getItem('userBalance');
+        if (savedBalance) {
+          console.log('💰 Restoring balance from localStorage:', savedBalance);
+          dispatch(setBalance(parseFloat(savedBalance)));
+        }
       }
     };
     
     checkWalletConnection();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     setIsClient(true);
@@ -628,7 +635,7 @@ export default function Navbar() {
     };
   }, []);
 
-  // switchToTestnet function removed - now handled by MainnetWarning component
+      // switchToTestnet function removed
 
   return (
     <nav className="backdrop-blur-md bg-[#070005]/90 fixed w-full z-20 transition-all duration-300 shadow-lg">
@@ -959,7 +966,7 @@ export default function Navbar() {
                 </Link>
               </div>
             ))}
-            {/* Switch to Testnet button removed - now handled by MainnetWarning component */}
+            {/* Switch to Testnet button removed */}
             <div className="flex justify-between items-center py-2 px-3">
               <span className="text-white/70">Dark Mode</span>
               <button 

@@ -10,6 +10,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { setBalance } from '@/store/balanceSlice';
+import useWalletStatus from '@/hooks/useWalletStatus';
 
 const GRID_SIZES = {
   5: 5, // 5x5 grid - classic mode
@@ -39,10 +40,11 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
   // Redux integration
   const dispatch = useDispatch();
   const { userBalance } = useSelector((state) => state.balance);
+  const { isConnected } = useWalletStatus();
 
   // Game Settings
   const defaultSettings = {
-    betAmount: 1, // Default to 1 ETH
+    betAmount: 0.001, // Default to 0.001 ETH
     mines: 5,
     isAutoBetting: false,
     tilesToReveal: 5,
@@ -130,7 +132,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
   // Calculate current payout
   const calculatePayout = () => {
     // Use the bet amount from settings (form) instead of local state
-    const currentBetAmount = settings.betAmount || 0.1;
+    const currentBetAmount = settings.betAmount || 0.001;
     const payout = currentBetAmount * multiplier;
     console.log('Calculating payout:', { currentBetAmount, multiplier, payout });
     return payout;
@@ -305,37 +307,37 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
       // Place bet using Redux balance
       const startGameWithBet = async () => {
         // Check if wallet is connected first
-        if (!window.ethereum || !window.ethereum.account) {
-          toast.error('Please connect your Ethereum wallet first');
+        console.log('🔌 Mines Bet - Wallet Status:', { isConnected, userBalance });
+        if (!isConnected) {
+          toast.error('Please connect your Ethereum wallet first to play Mines!');
           return;
         }
         
-        // Check Redux balance
-        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
+        // Check Redux balance (balance is already in ETH)
+        const currentBalance = parseFloat(userBalance || '0');
         
         if (currentBalance < settings.betAmount) {
-          toast.error(`Insufficient balance. You have ${currentBalance.toFixed(8)} ETH but need ${settings.betAmount} ETH`);
+          toast.error(`Insufficient balance. You have ${currentBalance.toFixed(5)} ETH but need ${settings.betAmount} ETH`);
           return;
         }
 
         try {
           // Deduct bet amount from Redux balance
-          const betAmountInOctas = settings.betAmount * 100000000; // Convert to octas
-          const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
+          const newBalance = (parseFloat(userBalance || '0') - settings.betAmount).toString();
           dispatch(setBalance(newBalance));
           
           console.log('=== STARTING MINES BET WITH REDUX BALANCE ===');
           console.log('Bet amount (ETH):', settings.betAmount);
           console.log('Current balance (ETH):', currentBalance);
           console.log('Mines count:', settings.mines);
-          console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'ETH');
+          console.log('Balance deducted. New balance:', parseFloat(newBalance).toFixed(5), 'ETH');
           
           // Start the game immediately
           setIsPlaying(true);
           setHasPlacedBet(true);
           playSound('bet');
           
-          toast.success(`Bet placed! ${settings.betAmount} ETH deducted from balance`);
+          toast.success(`Bet placed! ${settings.betAmount.toFixed(5)} ETH deducted from balance`);
           toast.info(`Game starting...`);
           
           // Special message if AI-assisted auto betting
@@ -345,7 +347,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
           } else if (settings.isAutoBetting) {
             toast.info(`Auto betting mode: Will reveal ${settings.tilesToReveal || 5} tiles`);
           } else {
-            toast.info(`Bet placed: ${settings.betAmount} ETH, ${settings.mines} mines`);
+            toast.info(`Bet placed: ${settings.betAmount.toFixed(5)} ETH, ${settings.mines} mines`);
           }
           
           // If auto-betting is enabled, automatically reveal tiles with minimal delay
@@ -650,17 +652,16 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
       playSound('cashout');
       
       // Update user balance in Redux store (add payout to current balance)
-      const currentBalanceOctas = parseInt(userBalance || '0');
-      const payoutOctas = Math.floor(payout * 100000000);
-      const newBalanceOctas = currentBalanceOctas + payoutOctas;
+      const currentBalance = parseFloat(userBalance || '0');
+      const newBalance = currentBalance + payout;
       
       console.log('Balance update:', {
-        currentBalance: (currentBalanceOctas / 100000000).toFixed(8),
+        currentBalance: currentBalance.toFixed(5),
         payout: payout.toFixed(5),
-        newBalance: (newBalanceOctas / 100000000).toFixed(8)
+        newBalance: newBalance.toFixed(5)
       });
       
-      dispatch(setBalance(newBalanceOctas.toString()));
+      dispatch(setBalance(newBalance.toString()));
       
       // Show brief confetti for wins
       if (multiplier > 1.5) {
@@ -700,10 +701,10 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
         if (onGameComplete) {
           onGameComplete({
             mines: minesCount,
-            betAmount: betAmount,
+            betAmount: betAmount.toFixed(5),
             won: true,
-            payout: payout,
-            multiplier: multiplier
+            payout: payout.toFixed(5),
+            multiplier: multiplier.toFixed(2)
           });
         }
       };
