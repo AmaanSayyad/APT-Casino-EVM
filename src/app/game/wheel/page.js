@@ -24,7 +24,7 @@ import WheelPayouts from "./components/WheelPayouts";
 import WheelHistory from "./components/WheelHistory";
 
 export default function Home() {
-  const [betAmount, setBetAmount] = useState(10);
+  const [betAmount, setBetAmount] = useState(0.001);
   const [risk, setRisk] = useState("medium");
   const [noOfSegments, setSegments] = useState(10);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -58,9 +58,9 @@ export default function Home() {
       console.log('Loading saved balance from localStorage:', savedBalance);
       dispatch(setBalance(savedBalance));
     } else {
-      // Set initial balance to 0 if no saved balance
-      console.log('No saved balance, setting to 0');
-      dispatch(setBalance("0"));
+      // Set initial balance to 1 ETH for demo purposes
+      console.log('No saved balance, setting to 1 ETH for demo');
+      dispatch(setBalance("1.00000"));
     }
     
     isInitialized.current = true; // Mark as initialized
@@ -78,17 +78,17 @@ export default function Home() {
   const manulBet = async () => {
     if (betAmount <= 0 || isSpinning) return;
 
-    // Check if wallet is connected first
+    // Check if wallet is connected first (optional for local play)
     if (!window.ethereum || !window.ethereum.account) {
-      alert('Please connect your Ethereum wallet first');
-      return;
+      console.log('No wallet connected, using local balance for demo');
+      // Continue with local balance for demo purposes
     }
 
-    // Check Redux balance
-    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
+    // Check Redux balance (balance is already in ETH)
+    const currentBalance = parseFloat(userBalance || '0');
     
     if (currentBalance < betAmount) {
-      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} ETH but need ${betAmount} ETH`);
+      alert(`Insufficient balance. You have ${currentBalance.toFixed(5)} ETH but need ${betAmount} ETH`);
       return;
     }
 
@@ -102,11 +102,10 @@ export default function Home() {
       console.log('Sectors:', noOfSegments);
       
       // Deduct bet amount from Redux balance
-      const betAmountInOctas = betAmount * 100000000; // Convert to octas
-      const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
+      const newBalance = (parseFloat(userBalance || '0') - betAmount).toString();
       dispatch(setBalance(newBalance));
       
-      console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'ETH');
+      console.log('Balance deducted. New balance:', parseFloat(newBalance).toFixed(5), 'ETH');
       
       // Set up callback to handle wheel animation completion
       window.wheelBetCallback = (landedMultiplier) => {
@@ -143,9 +142,9 @@ export default function Home() {
             id: Date.now(),
             game: 'Wheel',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            betAmount: betAmount,
+            betAmount: betAmount.toFixed(5),
             multiplier: `${actualMultiplier.toFixed(2)}x`,
-            payout: winAmount,
+            payout: winAmount.toFixed(5),
             result: 0,
             color: detectedColor
           };
@@ -156,17 +155,16 @@ export default function Home() {
           
           // Show result and update balance
           if (actualMultiplier > 0) {
-            notification.success(`Congratulations! ${betAmount} ETH × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} ETH won!`);
+            notification.success(`Congratulations! ${betAmount} ETH × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(5)} ETH won!`);
             
             // Update balance with winnings
-            const currentBalanceOctas = parseFloat(userBalance || '0');
-            const winAmountOctas = Math.floor(winAmount * 100000000);
-            const newBalanceWithWin = currentBalanceOctas + winAmountOctas;
+            const currentBalance = parseFloat(userBalance || '0');
+            const newBalanceWithWin = currentBalance + winAmount;
             
             console.log('💰 Adding winnings:', {
-              currentBalance: (currentBalanceOctas / 100000000).toFixed(8),
-              winAmount: winAmount.toFixed(8),
-              newBalance: (newBalanceWithWin / 100000000).toFixed(8)
+              currentBalance: currentBalance.toFixed(5),
+              winAmount: winAmount.toFixed(5),
+              newBalance: newBalanceWithWin.toFixed(5)
             });
             
             dispatch(setBalance(newBalanceWithWin.toString()));
@@ -537,7 +535,7 @@ export default function Home() {
               setGameMode={setGameMode}
               betAmount={betAmount}
               setBetAmount={setBetAmount}
-              balance={parseFloat(userBalance || '0') / 100000000} // Convert from octas to ETH
+              balance={parseFloat(userBalance || '0')} // Balance is already in ETH
               manulBet={manulBet}
               risk={selectedRisk}
               setRisk={setSelectedRisk}

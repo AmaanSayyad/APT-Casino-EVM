@@ -40,6 +40,68 @@ export default function EthereumConnectWalletButton() {
     return () => clearTimeout(timer);
   }, [connectors, connect, isConnected]);
 
+  // Additional connection monitoring
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Monitor connection stability
+    const checkConnection = () => {
+      if (window.ethereum && window.ethereum.isConnected()) {
+        console.log('MetaMask connection is stable');
+      } else {
+        console.log('MetaMask connection lost, attempting reconnect...');
+        // Try to reconnect if connection is lost
+        const wasConnected = localStorage.getItem('wagmi.connected');
+        if (wasConnected === 'true') {
+          handleConnect();
+        }
+      }
+    };
+
+    // Check connection every 5 seconds
+    const interval = setInterval(checkConnection, 5000);
+    return () => clearInterval(interval);
+  }, [isConnected]);
+
+  // MetaMask event listeners for better connection stability
+  useEffect(() => {
+    if (!window.ethereum) return;
+
+    const handleAccountsChanged = (accounts) => {
+      console.log('Accounts changed:', accounts);
+      if (accounts.length === 0) {
+        // User disconnected all accounts
+        localStorage.removeItem('wagmi.connected');
+        console.log('All accounts disconnected');
+      } else {
+        // Account changed, but still connected
+        console.log('Account changed, maintaining connection');
+      }
+    };
+
+    const handleChainChanged = (chainId) => {
+      console.log('Chain changed:', chainId);
+      // Don't disconnect on chain change, just log it
+    };
+
+    const handleDisconnect = (error) => {
+      console.log('MetaMask disconnected:', error);
+      localStorage.removeItem('wagmi.connected');
+    };
+
+    // Add event listeners
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
+    window.ethereum.on('disconnect', handleDisconnect);
+
+    // Cleanup
+    return () => {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      window.ethereum.removeListener('chainChanged', handleChainChanged);
+      window.ethereum.removeListener('disconnect', handleDisconnect);
+    };
+  }, []);
+
   const handleConnect = async () => {
     try {
       // Try to find MetaMask connector first
@@ -52,9 +114,17 @@ export default function EthereumConnectWalletButton() {
       
       if (connector) {
         console.log('Connecting to wallet...', connector.id);
+        
+        // Check if MetaMask is available and connected
+        if (window.ethereum && !window.ethereum.isConnected()) {
+          // Request account access
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+        }
+        
         await connect({ connector });
         // Store connection state
         localStorage.setItem('wagmi.connected', 'true');
+        console.log('Wallet connected successfully');
       } else {
         console.error('No wallet connector found');
         alert('No wallet connector found. Please make sure MetaMask is installed.');

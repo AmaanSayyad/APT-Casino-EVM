@@ -44,6 +44,16 @@ const BettingPanel = ({
 
   return (
     <div className="bg-[#290023] border border-[#333947] rounded-3xl p-4 flex flex-col h-full">
+      {/* Balance Display */}
+      <div className="mb-4 p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-300">Balance:</span>
+          <span className="text-sm text-green-300 font-medium">
+            {balance.toFixed(5)} ETH
+          </span>
+        </div>
+      </div>
+
       {/* Mode Tabs */}
       <div className="flex mb-4 bg-[#120521] border border-[#333947] rounded-3xl p-2 gap-2 overflow-hidden">
         <div className={cn("w-1/2", gameMode === "manual" && "gradient-borderb")}>
@@ -75,7 +85,7 @@ const BettingPanel = ({
       <div className="mb-4">
         <div className="flex justify-between p-1 mb-1">
           <label className="text-sm text-white">Bet Amount</label>
-          <div className="text-sm">${betAmount.toFixed(2)}</div>
+          <div className="text-sm">{betAmount.toFixed(5)} ETH</div>
         </div>
         <div className="flex w-full gradient-border">
         <div className="flex items-center w-[60%]">
@@ -85,7 +95,9 @@ const BettingPanel = ({
               value={inputValue}
               onChange={handleInputChange}
               className="bg-transparent border-none outline-none w-full text-white p-1"
-              placeholder="0.00000000000"
+              placeholder="0.00100"
+              step="0.001"
+              min="0.001"
             />
             <Image
                   src={coin}
@@ -248,14 +260,16 @@ const BettingPanel = ({
             manulBet();
           }
         }}
-        disabled={isSpinning || betAmount <= 0 || betAmount > balance}
-        className={`py-3 mt-4 rounded-lg text-center font-semibold transition-all w-full ${
-          isSpinning || betAmount <= 0 || betAmount > balance
-            ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-            : "bg-gradient-to-r from-[#F1324D] to-[#2414E3] text-white hover:from-[#e82f49] hover:to-[#2112e1]"
+        disabled={isSpinning || betAmount <= 0 || betAmount > balance || balance <= 0}
+        className={`py-3 mt-4 rounded-lg text-center font-semibold transition-all w-full border-2 ${
+          isSpinning || betAmount <= 0 || betAmount > balance || balance <= 0
+            ? "bg-gray-700 text-gray-500 cursor-not-allowed border-gray-500"
+            : "bg-gradient-to-r from-[#F1324E3] to-[#2414E3] text-white hover:from-[#e82f49] hover:to-[#2112e1] border-white shadow-lg hover:border-yellow-300 hover:shadow-yellow-300/25"
         }`}
       >
-        {gameMode === "auto" ? "Start Autobet" : "Start Bet"}
+        <span className="font-bold text-lg">
+          {gameMode === "auto" ? "Start Autobet" : "Start Bet"}
+        </span>
       </button>
 
     </div>

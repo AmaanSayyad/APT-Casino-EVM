@@ -85,7 +85,7 @@ const WheelHistory = ({ gameHistory = [] }) => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <div className="bg-black/20 rounded-lg p-3 border border-purple-800/10">
                 <div className="text-xs text-white/50 mb-1">Total Bets</div>
                 <div className="text-xl font-bold text-white flex items-center">
@@ -97,16 +97,20 @@ const WheelHistory = ({ gameHistory = [] }) => {
               <div className="bg-black/20 rounded-lg p-3 border border-purple-800/10">
                 <div className="text-xs text-white/50 mb-1">Total Volume</div>
                 <div className="text-xl font-bold text-white flex items-center">
-                  {totalVolume} ETH
-                  <Image src={coin} width={20} height={20} alt="coin" className="ml-2" />
+                  <span className="truncate max-w-[120px]" title={`${totalVolume} ETH`}>
+                    {totalVolume.toFixed(5)} ETH
+                  </span>
+                  <Image src={coin} width={20} height={20} alt="coin" className="ml-2 flex-shrink-0" />
                 </div>
               </div>
               
               <div className="bg-black/20 rounded-lg p-3 border border-purple-800/10">
                 <div className="text-xs text-white/50 mb-1">Biggest Win</div>
                 <div className="text-xl font-bold text-white flex items-center">
-                  {biggestWin} ETH
-                  <FaTrophy className="ml-2 text-yellow-400 text-sm" />
+                  <span className="truncate max-w-[120px]" title={`${biggestWin} ETH`}>
+                    {biggestWin.toFixed(5)} ETH
+                  </span>
+                  <FaTrophy className="ml-2 text-yellow-400 text-sm flex-shrink-0" />
                 </div>
               </div>
             </div>
@@ -133,7 +137,7 @@ const WheelHistory = ({ gameHistory = [] }) => {
             </div>
             
             <div className="overflow-x-auto">
-              <table className="w-full text-white">
+              <table className="w-full text-white min-w-[600px]">
                 <thead>
                   <tr className="bg-black/30 border-b border-purple-800/20">
                     <th className="py-3 px-4 text-left">Game</th>
@@ -151,15 +155,19 @@ const WheelHistory = ({ gameHistory = [] }) => {
                       <td className="py-3 px-4">{item.time}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          {item.betAmount} ETH
-                          <Image src={coin} width={16} height={16} alt="coin" className="ml-1" />
+                          <span className="truncate max-w-[80px]" title={`${item.betAmount} ETH`}>
+                            {item.betAmount} ETH
+                          </span>
+                          <Image src={coin} width={16} height={16} alt="coin" className="ml-1 flex-shrink-0" />
                         </div>
                       </td>
                       <td className="py-3 px-4 font-medium">{item.multiplier}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          {item.payout} ETH
-                          <Image src={coin} width={16} height={16} alt="coin" className="ml-1" />
+                          <span className="truncate max-w-[80px]" title={`${item.payout} ETH`}>
+                            {item.payout} ETH
+                          </span>
+                          <Image src={coin} width={16} height={16} alt="coin" className="ml-1 flex-shrink-0" />
                         </div>
                       </td>
                       <td className={`py-3 px-4 font-medium ${item.payout > 0 ? 'text-green-400' : 'text-red-400'}`}>

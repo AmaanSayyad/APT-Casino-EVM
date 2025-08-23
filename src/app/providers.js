@@ -32,14 +32,18 @@ export default function Providers({ children }) {
       metaMask({
         dappMetadata: {
           name: 'APT Casino',
-          url: 'http://localhost:3001',
+          url: 'http://localhost:3000',
         },
         shimDisconnect: true,
         UNSTABLE_shimOnConnectSelectAccount: true,
+        shimChainChangedDisconnect: false,
+        shimAccountChangedDisconnect: false,
       }),
       injected({
         shimDisconnect: true,
         UNSTABLE_shimOnConnectSelectAccount: true,
+        shimChainChangedDisconnect: false,
+        shimAccountChangedDisconnect: false,
       }),
     ],
     publicClient: createPublicClient({
@@ -51,6 +55,7 @@ export default function Providers({ children }) {
       key: 'aptcasino.wallet',
     }),
     ssr: true,
+    pollingInterval: 10000, // Poll every 10 seconds instead of default
   });
 
   return (
