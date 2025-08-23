@@ -10,7 +10,8 @@ import { ThemeProvider } from 'next-themes';
 import { WagmiConfig, createConfig } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
 import { createPublicClient, http } from 'viem';
-import { injected } from '@wagmi/connectors';
+import { injected, metaMask } from '@wagmi/connectors';
+import { createStorage } from 'wagmi';
 
 
 const queryClient = new QueryClient();
@@ -24,22 +25,32 @@ export default function Providers({ children }) {
 
   if (!mounted) return null;
 
-  // Wagmi configuration with MetaMask
+  // Wagmi configuration with MetaMask and persistence
   const config = createConfig({
     chains: [sepolia],
     connectors: [
-      injected({
-        chains: [sepolia],
-        options: {
-          shimDisconnect: true,
-          UNSTABLE_shimOnConnectSelectAccount: true,
+      metaMask({
+        dappMetadata: {
+          name: 'APT Casino',
+          url: 'http://localhost:3001',
         },
+        shimDisconnect: true,
+        UNSTABLE_shimOnConnectSelectAccount: true,
+      }),
+      injected({
+        shimDisconnect: true,
+        UNSTABLE_shimOnConnectSelectAccount: true,
       }),
     ],
     publicClient: createPublicClient({
       chain: sepolia,
       transport: http()
     }),
+    storage: createStorage({
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      key: 'aptcasino.wallet',
+    }),
+    ssr: true,
   });
 
   return (

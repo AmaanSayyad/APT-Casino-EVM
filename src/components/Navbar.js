@@ -13,11 +13,72 @@ import WithdrawModal from "./WithdrawModal";
 
 
 import { useNotification } from './NotificationSystem';
-// Mock functions for demo purposes
+import { TREASURY_CONFIG } from '../config/treasury';
+// Enhanced UserBalanceSystem with deposit functionality
 const UserBalanceSystem = {
   getBalance: async (address) => {
+    // Try to get balance from localStorage first (use same key as Redux store)
+    const savedBalance = localStorage.getItem('userBalance');
+    if (savedBalance) {
+      return savedBalance;
+    }
     // Mock balance for demo
-    return "1000.00";
+    return "0.00";
+  },
+  
+  deposit: async (userAddress, amount, transactionHash) => {
+    try {
+      console.log('Processing deposit:', { userAddress, amount, transactionHash });
+      
+      // Call deposit API
+      const response = await fetch('/api/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userAddress: userAddress,
+          amount: amount,
+          transactionHash: transactionHash || '0x' + Math.random().toString(16).substr(2, 64)
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Deposit failed');
+      }
+      
+      // Update local storage with the EXACT amount deposited (use same key as Redux store)
+      const currentBalance = parseFloat(localStorage.getItem('userBalance') || '0');
+      const newBalance = currentBalance + parseFloat(amount);
+      
+      console.log('UserBalanceSystem deposit:', { userAddress, currentBalance, amount, newBalance });
+      
+      // Store the new balance
+      localStorage.setItem('userBalance', newBalance.toString());
+      
+      return result;
+    } catch (error) {
+      console.error('Deposit error:', error);
+      throw error;
+    }
+  },
+  
+  getDepositHistory: async (userAddress) => {
+    try {
+      const response = await fetch(`/api/deposit?userAddress=${userAddress}`);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to get deposit history');
+      }
+      
+      return result.deposits;
+    } catch (error) {
+      console.error('Get deposit history error:', error);
+      return [];
+    }
   }
 };
 
@@ -79,6 +140,8 @@ export default function Navbar() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [isDepositing, setIsDepositing] = useState(false);
+  const [depositHistory, setDepositHistory] = useState([]);
+  const [showDepositHistory, setShowDepositHistory] = useState(false);
 
   // Wallet connection
   const { isConnected, address: account } = useAccount();
@@ -109,8 +172,24 @@ export default function Navbar() {
     
     try {
       dispatch(setLoading(true));
-      const balance = await UserBalanceSystem.getBalance(address);
-      dispatch(setBalance(balance));
+      
+      // First try to get from localStorage
+      const localBalance = localStorage.getItem(`userBalance_${address}`);
+      console.log('Loading balance from localStorage:', localBalance);
+      
+      if (localBalance && parseFloat(localBalance) > 0) {
+        dispatch(setBalance(localBalance));
+        console.log('Balance loaded from localStorage:', localBalance);
+      } else {
+        // If no local balance, try to get from UserBalanceSystem
+        const balance = await UserBalanceSystem.getBalance(address);
+        console.log('Balance loaded from UserBalanceSystem:', balance);
+        dispatch(setBalance(balance));
+        
+              // Save to localStorage for persistence (use same key as Redux store)
+      localStorage.setItem('userBalance', balance);
+      }
+      
     } catch (error) {
       console.error('Error loading user balance:', error);
       dispatch(setBalance("0"));
@@ -119,11 +198,17 @@ export default function Navbar() {
     }
   };
 
+  // Load balance from localStorage
+  const loadBalanceFromStorage = (address) => {
+    if (!address) return null;
+    return localStorage.getItem('userBalance');
+  };
+
   // Load balance when wallet connects
   useEffect(() => {
     if (isWalletReady && address) {
       // First try to load from localStorage
-      const savedBalance = loadBalanceFromStorage();
+      const savedBalance = loadBalanceFromStorage(address);
       if (savedBalance && savedBalance !== "0") {
         console.log('Loading saved balance from localStorage:', savedBalance);
         dispatch(setBalance(savedBalance));
@@ -131,8 +216,39 @@ export default function Navbar() {
         // If no saved balance, load from blockchain
         loadUserBalance();
       }
+      
+      // Load deposit history
+      loadDepositHistory();
     }
   }, [isWalletReady, address]);
+  
+  // Auto-refresh balance every 5 seconds when wallet is connected
+  useEffect(() => {
+    if (!isWalletReady || !address) return;
+    
+    const interval = setInterval(() => {
+      const localBalance = localStorage.getItem('userBalance');
+      if (localBalance && localBalance !== userBalance) {
+        console.log('Auto-refreshing balance:', { localBalance, userBalance });
+        dispatch(setBalance(localBalance));
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [isWalletReady, address, userBalance]);
+  
+  // Load deposit history
+  const loadDepositHistory = async () => {
+    if (!address) return;
+    
+    try {
+      const history = await UserBalanceSystem.getDepositHistory(address);
+      setDepositHistory(history);
+    } catch (error) {
+      console.error('Error loading deposit history:', error);
+      setDepositHistory([]);
+    }
+  };
 
   // Check if wallet was previously connected on page load
   useEffect(() => {
@@ -220,8 +336,8 @@ export default function Navbar() {
 
     try {
       setIsWithdrawing(true);
-      const balanceInApt = parseFloat(userBalance || '0') / 100000000;
-      if (balanceInApt <= 0) {
+      const balanceInEth = parseFloat(userBalance || '0');
+      if (balanceInEth <= 0) {
         notification.error('No balance to withdraw');
         return;
       }
@@ -238,7 +354,7 @@ export default function Navbar() {
         },
         body: JSON.stringify({
           userAddress: account.address,
-          amount: balanceInApt
+          amount: balanceInEth
         })
       });
 
@@ -251,7 +367,10 @@ export default function Navbar() {
       // Update user balance to 0 after successful withdrawal
       dispatch(setBalance('0'));
       
-      notification.success(`Successfully withdrew ${balanceInApt.toFixed(4)} ETH! TX: ${result.transactionHash.slice(0, 8)}...`);
+      // Clear localStorage balance
+              localStorage.setItem('userBalance', '0');
+      
+              notification.success(`Successfully withdrew ${balanceInEth.toFixed(5)} ETH! TX: ${result.transactionHash.slice(0, 8)}...`);
       
       // Close the modal
       setShowBalanceModal(false);
@@ -276,31 +395,129 @@ export default function Navbar() {
       notification.error('Please enter a valid deposit amount');
       return;
     }
+    
+    // Check deposit limits
+    if (amount < TREASURY_CONFIG.LIMITS.MIN_DEPOSIT) {
+      notification.error(`Minimum deposit amount is ${TREASURY_CONFIG.LIMITS.MIN_DEPOSIT} ETH`);
+      return;
+    }
+    
+    if (amount > TREASURY_CONFIG.LIMITS.MAX_DEPOSIT) {
+      notification.error(`Maximum deposit amount is ${TREASURY_CONFIG.LIMITS.MAX_DEPOSIT} ETH`);
+      return;
+    }
 
     setIsDepositing(true);
     try {
       console.log('Depositing to house balance:', { address: account.address, amount });
       
-      // Convert amount to octas (ETH uses 8 decimal places)
-      const amountOctas = Math.floor(amount * 100000000).toString();
+      // Check if MetaMask is available
+      if (!window.ethereum) {
+        throw new Error('MetaMask is not installed');
+      }
       
-      // Create deposit payload using UserBalanceSystem
-      const payload = UserBalanceSystem.deposit(amountOctas);
+      // Request account access if not already connected
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const userAccount = accounts[0];
       
-      console.log('Deposit payload:', payload);
+      // Check if user is on Sepolia network
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const expectedChainId = TREASURY_CONFIG.NETWORK.CHAIN_ID;
       
-      // Mock transaction for demo purposes
-      const mockTxHash = '0x' + Math.random().toString(16).substr(2, 64);
-      console.log('Mock deposit transaction:', mockTxHash);
+      if (chainId !== expectedChainId) {
+        // Try to switch to Sepolia
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: expectedChainId }],
+          });
+        } catch (switchError) {
+          // If Sepolia is not added, add it
+          if (switchError.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: expectedChainId,
+                chainName: TREASURY_CONFIG.NETWORK.CHAIN_NAME,
+                nativeCurrency: {
+                  name: 'Sepolia ETH',
+                  symbol: 'ETH',
+                  decimals: 18
+                },
+                rpcUrls: [TREASURY_CONFIG.NETWORK.RPC_URL],
+                blockExplorerUrls: [TREASURY_CONFIG.NETWORK.EXPLORER_URL]
+              }]
+            });
+          } else {
+            throw new Error(`Please switch to ${TREASURY_CONFIG.NETWORK.CHAIN_NAME} network`);
+          }
+        }
+      }
       
-      // Update local balance immediately
+      // Casino treasury address from config
+      const TREASURY_ADDRESS = TREASURY_CONFIG.ADDRESS;
+      
+      // Convert amount to Wei (18 decimals)
+      const amountWei = (amount * 10**18).toString();
+      
+      // Send transaction to treasury
+      const transactionParameters = {
+        to: TREASURY_ADDRESS,
+        from: userAccount,
+        value: '0x' + parseInt(amountWei).toString(16), // Convert to hex
+        gas: TREASURY_CONFIG.GAS.DEPOSIT_LIMIT, // Gas limit from config
+      };
+      
+      console.log('Sending transaction to MetaMask:', transactionParameters);
+      
+      // Request transaction from MetaMask
+      const txHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [transactionParameters],
+      });
+      
+      console.log('Transaction sent:', txHash);
+      
+      // Wait for transaction confirmation
+      notification.info(`Transaction sent! Hash: ${txHash.slice(0, 10)}...`);
+      
+      // Wait for confirmation (you can implement proper confirmation checking here)
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
+      
+      // After successful transaction, update local balance
       const currentBalance = parseFloat(userBalance || '0');
-      const newBalance = (currentBalance + (amount * 100000000)).toString();
+      const newBalance = (currentBalance + amount).toString();
+      
+      console.log('Balance update:', { currentBalance, amount, newBalance });
+      
+      // Update Redux store immediately
       dispatch(setBalance(newBalance));
       
-      notification.success(`Successfully deposited ${amount} ETH to house balance! TX: ${mockTxHash.slice(0, 8)}...`);
+      // Save balance to localStorage immediately (use same key as Redux store)
+      if (account?.address) {
+        localStorage.setItem('userBalance', newBalance);
+        console.log('Balance saved to localStorage:', newBalance);
+      }
+      
+      // Call deposit API to record the transaction
+      try {
+        if (account?.address) {
+          const result = await UserBalanceSystem.deposit(account.address, amount, txHash);
+          console.log('Deposit recorded:', result);
+        } else {
+          console.warn('Account address not available for API call');
+        }
+        
+      } catch (apiError) {
+        console.warn('Could not record deposit in API:', apiError);
+      }
+      
+      notification.success(`Successfully deposited ${amount} ETH to casino treasury! TX: ${txHash.slice(0, 10)}...`);
       
       setDepositAmount("");
+      
+      // Refresh deposit history
+      await loadDepositHistory();
       
     } catch (error) {
       console.error('Deposit error:', error);
@@ -708,7 +925,7 @@ export default function Navbar() {
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-gray-300">Balance:</span>
                   <span className="text-sm text-green-300 font-medium">
-                    {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} ETH`}
+                    {isLoadingBalance ? 'Loading...' : `${parseFloat(userBalance || '0').toFixed(5)} ETH`}
                   </span>
                   <button
                     onClick={() => setShowBalanceModal(true)}
@@ -775,9 +992,9 @@ export default function Navbar() {
                 <div className="p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-300">House Balance:</span>
-                    <span className="text-sm text-green-300 font-medium">
-                      {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} ETH`}
-                    </span>
+                                      <span className="text-sm text-green-300 font-medium">
+                    {isLoadingBalance ? 'Loading...' : `${parseFloat(userBalance || '0').toFixed(5)} ETH`}
+                  </span>
                   </div>
                   <button
                     onClick={() => {
@@ -833,13 +1050,16 @@ export default function Navbar() {
             <div className="mb-4 p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
               <span className="text-sm text-gray-300">Current Balance:</span>
               <div className="text-lg text-green-300 font-bold">
-                {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} ETH`}
+                {isLoadingBalance ? 'Loading...' : `${parseFloat(userBalance || '0').toFixed(5)} ETH`}
               </div>
             </div>
             
             {/* Deposit Section */}
             <div className="mb-6">
-              <h4 className="text-sm font-medium text-white mb-2">Deposit ETH</h4>
+              <h4 className="text-sm font-medium text-white mb-2">Deposit ETH to Casino Treasury</h4>
+              <div className="text-xs text-gray-400 mb-2">
+                Treasury: {TREASURY_CONFIG.ADDRESS.slice(0, 10)}...{TREASURY_CONFIG.ADDRESS.slice(-8)}
+              </div>
               <div className="flex gap-2">
                 <input
                   type="number"
@@ -876,7 +1096,7 @@ export default function Navbar() {
               </p>
               {/* Quick Deposit Buttons */}
               <div className="flex gap-1 mt-2">
-                {[0.1, 0.5, 1, 5].map((amount) => (
+                {[0.001, 0.01, 0.1, 1].map((amount) => (
                   <button
                     key={amount}
                     onClick={() => setDepositAmount(amount.toString())}
@@ -887,6 +1107,40 @@ export default function Navbar() {
                   </button>
                 ))}
               </div>
+              
+              {/* Deposit History Button */}
+              <div className="mt-3">
+                <button
+                  onClick={() => setShowDepositHistory(!showDepositHistory)}
+                  className="w-full px-3 py-2 text-xs bg-gray-600/50 hover:bg-gray-500/50 text-gray-300 rounded transition-colors flex items-center justify-center gap-2"
+                >
+                  {showDepositHistory ? 'Hide' : 'Show'} Deposit History
+                  <svg className={`w-3 h-3 transition-transform ${showDepositHistory ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Deposit History */}
+              {showDepositHistory && (
+                <div className="mt-3 p-3 bg-gray-800/30 rounded border border-gray-600/30">
+                  <h5 className="text-xs font-medium text-white mb-2">Recent Deposits</h5>
+                  {depositHistory.length > 0 ? (
+                    <div className="space-y-2">
+                      {depositHistory.slice(0, 3).map((deposit) => (
+                        <div key={deposit.id} className="flex justify-between items-center text-xs">
+                          <span className="text-gray-300">{deposit.amount} ETH</span>
+                          <span className="text-gray-400">
+                            {new Date(deposit.timestamp).toLocaleDateString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 text-center">No deposits yet</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Withdraw Section */}
@@ -913,7 +1167,7 @@ export default function Navbar() {
               </button>
               {isConnected && parseFloat(userBalance || '0') > 0 && (
                 <p className="text-xs text-gray-400 mt-1 text-center">
-                  Withdraw {parseFloat(userBalance || '0') / 100000000} ETH to your wallet
+                  Withdraw {parseFloat(userBalance || '0').toFixed(5)} ETH to your wallet
                 </p>
               )}
             </div>
@@ -923,7 +1177,7 @@ export default function Navbar() {
               <button
                 onClick={() => {
                   // Only refresh from localStorage, don't try blockchain
-                  const savedBalance = loadBalanceFromStorage();
+                  const savedBalance = loadBalanceFromStorage(address);
                   if (savedBalance && savedBalance !== "0") {
                     console.log('Refreshing balance from localStorage:', savedBalance);
                     dispatch(setBalance(savedBalance));

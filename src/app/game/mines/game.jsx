@@ -646,7 +646,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
       
       // Cashout is just a local operation - no blockchain transaction needed
       // The actual payout was already handled in the initial bet transaction
-      toast.success(`Cashed out: ${payout.toFixed(4)} ETH (${multiplier.toFixed(2)}x)`);
+              toast.success(`Cashed out: ${payout.toFixed(5)} ETH (${multiplier.toFixed(2)}x)`);
       playSound('cashout');
       
       // Update user balance in Redux store (add payout to current balance)
@@ -656,7 +656,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
       
       console.log('Balance update:', {
         currentBalance: (currentBalanceOctas / 100000000).toFixed(8),
-        payout: payout.toFixed(4),
+        payout: payout.toFixed(5),
         newBalance: (newBalanceOctas / 100000000).toFixed(8)
       });
       

@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
-import { EthereumAccount, EthereumClient, CoinClient } from 'ethereum';
+import { ethers } from 'ethers';
 
-// Kasa cüzdan private key'i - environment variable'dan al
-const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "0x0e5070144da800e1528a09e39ee0f589a4feafb880968de6f0d5479f7258bd82";
-const ETHOS_NODE_URL = process.env.NEXT_PUBLIC_ETHOS_NETWORK === 'mainnet' 
-  ? 'https://fullnode.mainnet.ethereumlabs.com/v1'
-  : 'https://fullnode.testnet.ethereumlabs.com/v1';
+// Treasury private key from environment
+const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "0xa0c83522c748fcd4086854f3635b2b9a762d8107b9f0b478a7d8515f5897abec";
 
-const client = new EthereumClient(ETHOS_NODE_URL);
+// Sepolia RPC URL
+const SEPOLIA_RPC = process.env.NEXT_PUBLIC_SEPOLIA_RPC || 'https://rpc.sepolia.org';
+
+// Create provider and wallet
+const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+const treasuryWallet = new ethers.Wallet(TREASURY_PRIVATE_KEY, provider);
 
 export async function POST(request) {
   try {
@@ -30,38 +32,29 @@ export async function POST(request) {
       );
     }
 
-    // Create treasury account from private key
-    const treasuryAccount = new EthereumAccount(
-      new Uint8Array(Buffer.from(TREASURY_PRIVATE_KEY.slice(2), 'hex'))
-    );
-    
-    const coinClient = new CoinClient(client);
-    
-    // Convert amount to octas (ETH has 8 decimal places)
-    const amountOctas = Math.floor(amount * 100000000);
-    
     console.log(`🏦 Processing withdrawal: ${amount} ETH to ${userAddress}`);
-    console.log(`📍 Treasury: ${treasuryAccount.address().hex()}`);
+    console.log(`📍 Treasury: ${treasuryWallet.address}`);
     
     // Check treasury balance
     let treasuryBalance = 0;
     try {
-      treasuryBalance = await coinClient.checkBalance(treasuryAccount);
-      console.log(`💰 Treasury balance: ${treasuryBalance / 100000000} ETH`);
+      treasuryBalance = await provider.getBalance(treasuryWallet.address);
+      console.log(`💰 Treasury balance: ${ethers.formatEther(treasuryBalance)} ETH`);
     } catch (balanceError) {
       console.log('⚠️ Could not check treasury balance, proceeding with transfer attempt...');
       console.log('Balance error:', balanceError.message);
     }
     
-    if (treasuryBalance > 0 && treasuryBalance < amountOctas) {
+    // Check if treasury has sufficient funds
+    const amountWei = ethers.parseEther(amount.toString());
+    if (treasuryBalance < amountWei) {
       return NextResponse.json(
-        { error: `Insufficient treasury funds. Available: ${treasuryBalance / 100000000} ETH, Requested: ${amount} ETH` },
+        { error: `Insufficient treasury funds. Available: ${ethers.formatEther(treasuryBalance)} ETH, Requested: ${amount} ETH` },
         { status: 400 }
       );
     }
     
-    // Transfer ETH from treasury to user
-    // Convert userAddress to hex string if it's an object
+    // Format user address
     let formattedUserAddress;
     if (typeof userAddress === 'object' && userAddress.data) {
       // Convert Uint8Array-like object to hex string
@@ -74,26 +67,31 @@ export async function POST(request) {
     }
     
     console.log('🔧 Formatted user address:', formattedUserAddress);
-    console.log('🔧 Treasury account:', treasuryAccount.address().hex());
-    console.log('🔧 Amount in octas:', amountOctas);
+    console.log('🔧 Treasury account:', treasuryWallet.address);
+    console.log('🔧 Amount in Wei:', amountWei.toString());
     
-    const txnHash = await coinClient.transfer(
-      treasuryAccount,
-      formattedUserAddress,
-      amountOctas
-    );
+    // Send transaction from treasury to user
+    const tx = await treasuryWallet.sendTransaction({
+      to: formattedUserAddress,
+      value: amountWei,
+      gasLimit: process.env.GAS_LIMIT_WITHDRAW ? parseInt(process.env.GAS_LIMIT_WITHDRAW) : 100000
+    });
+    
+    console.log(`📤 Transaction sent: ${tx.hash}`);
     
     // Wait for transaction confirmation
-    await client.waitForTransaction(txnHash);
+    const receipt = await tx.wait();
     
-    console.log(`✅ Withdrawal successful: ${amount} ETH to ${userAddress}, TX: ${txnHash}`);
+    console.log(`✅ Withdrawal successful: ${amount} ETH to ${userAddress}, TX: ${receipt.hash}`);
     
     return NextResponse.json({
       success: true,
-      transactionHash: txnHash,
+      transactionHash: receipt.hash,
       amount: amount,
       userAddress: userAddress,
-      treasuryAddress: treasuryAccount.address().hex()
+      treasuryAddress: treasuryWallet.address,
+      gasUsed: receipt.gasUsed.toString(),
+      effectiveGasPrice: receipt.effectiveGasPrice.toString()
     });
     
   } catch (error) {

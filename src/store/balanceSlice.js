@@ -49,7 +49,7 @@ const balanceSlice = createSlice({
     addToBalance(state, action) {
       const amountToAdd = parseFloat(action.payload);
       const currentBalance = parseFloat(state.userBalance);
-      const newBalance = Math.max(0, currentBalance + amountToAdd).toFixed(2);
+      const newBalance = Math.max(0, currentBalance + amountToAdd).toFixed(5);
       state.userBalance = newBalance;
       // Persist to localStorage
       if (typeof window !== 'undefined') {
@@ -59,7 +59,7 @@ const balanceSlice = createSlice({
     subtractFromBalance(state, action) {
       const amountToSubtract = parseFloat(action.payload);
       const currentBalance = parseFloat(state.userBalance);
-      const newBalance = Math.max(0, currentBalance - amountToSubtract).toFixed(2);
+      const newBalance = Math.max(0, currentBalance - amountToSubtract).toFixed(5);
       state.userBalance = newBalance;
       // Persist to localStorage
       if (typeof window !== 'undefined') {

@@ -2,7 +2,7 @@
 import { useState, forwardRef, useImperativeHandle, useCallback, useEffect, useRef } from "react";
 import Matter from 'matter-js';
 import { useSelector, useDispatch } from 'react-redux';
-import { setBalance, addToBalance } from '@/store/balanceSlice';
+import { setBalance, addToBalance, subtractFromBalance } from '@/store/balanceSlice';
 
 const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChange, betAmount = 0, onBetHistoryChange }, ref) => {
   const dispatch = useDispatch();
@@ -70,7 +70,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   // Keep the latest bet amount in a ref for use in async handlers
   const betAmountRef = useRef(0);
   useEffect(() => {
-    betAmountRef.current = parseFloat(betAmount) || 0;
+    const newBetAmount = parseFloat(betAmount) || 0;
+    betAmountRef.current = newBetAmount;
+    console.log('PlinkoGame: Bet amount updated:', { betAmount, newBetAmount, refValue: betAmountRef.current });
   }, [betAmount]);
 
   // Game constants - matching the reference repo
@@ -471,8 +473,11 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         
         console.log('=== GAME RESULT ===');
         console.log('Row configuration:', rows, 'rows,', riskLevel, 'risk');
-        console.log('Bet amount (latest):', betAmountRef.current);
+        console.log('Bet amount (latest):', latestBetAmount);
+        console.log('Bet amount (prop):', betAmount);
+        console.log('Bet amount (ref):', betAmountRef.current);
         console.log('Multiplier:', multiplier, '(bin index:', binIndex, ')');
+        console.log('Multiplier value:', multiplierValue);
         console.log('Reward calculated:', reward, 'ETH');
         console.log('==================');
         
@@ -480,22 +485,13 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         if (latestBetAmount > 0) {
           console.log('Adding reward to balance:');
           console.log('  Current balance from Redux:', userBalance);
-          console.log('  Current balance in ETH:', parseFloat(userBalance) / 100000000);
+          console.log('  Current balance in ETH:', parseFloat(userBalance));
           console.log('  Reward to add:', reward);
           
-          const currentBalance = parseFloat(userBalance);
-          const rewardInReduxUnit = reward * 100000000;
-          const finalBalance = (currentBalance + rewardInReduxUnit).toFixed(2);
+          // Use addToBalance to properly update Redux store
+          dispatch(addToBalance(reward));
           
-          console.log('Reward addition:');
-          console.log('  Current balance (Redux unit):', currentBalance);
-          console.log('  Current balance (ETH):', (currentBalance / 100000000).toFixed(3));
-          console.log('  Reward added (Redux unit):', rewardInReduxUnit);
-          console.log('  Reward added (ETH):', reward);
-          console.log('  Final balance (Redux unit):', finalBalance);
-          console.log('  Final balance (ETH):', (parseFloat(finalBalance) / 100000000).toFixed(3));
-          
-          dispatch(addToBalance(rewardInReduxUnit));
+          console.log('Reward added to balance via Redux');
         }
         
         // Play bin land sound
@@ -506,9 +502,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           id: Date.now(),
           game: "Plinko",
           title: new Date().toLocaleTimeString(),
-          betAmount: latestBetAmount.toFixed(2),
+          betAmount: latestBetAmount.toFixed(5),
           multiplier: multipliers[binIndex],
-          payout: reward.toFixed(2),
+          payout: reward.toFixed(5),
           timestamp: Date.now()
         };
         setBetHistory(prev => {
@@ -565,15 +561,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     // Simple balance check - if user doesn't have enough balance, don't allow playing
     const currentBalance = parseFloat(userBalance);
     const latestBetAmount = betAmountRef.current;
-    const betAmountInReduxUnit = latestBetAmount * 100000000;
     
-    if (betAmountInReduxUnit > currentBalance) {
+    if (latestBetAmount > currentBalance) {
       console.warn('Insufficient balance for bet:', {
-        currentBalance: currentBalance / 100000000,
+        currentBalance: currentBalance,
         betAmount: latestBetAmount,
-        balanceInETH: (currentBalance / 100000000).toFixed(3)
+        balanceInETH: currentBalance.toFixed(9)
       });
-      alert(`Insufficient balance! You have ${(currentBalance / 100000000).toFixed(3)} ETH but need ${latestBetAmount} ETH`);
+              alert(`Insufficient balance! You have ${currentBalance.toFixed(9)} ETH but need ${latestBetAmount} ETH`);
       return;
     }
     
@@ -583,9 +578,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
     // Deduct bet amount when ball is spawned
     if (latestBetAmount > 0) {
-      const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
-      dispatch(setBalance(newBalance));
-      console.log('Bet amount deducted:', latestBetAmount, 'New balance:', newBalance);
+      // Use subtractFromBalance to properly update Redux store
+      dispatch(subtractFromBalance(latestBetAmount));
+      console.log('Bet amount deduction:', { 
+        currentBalance, 
+        betAmount: latestBetAmount,
+        betAmountProp: betAmount,
+        betAmountRef: betAmountRef.current
+      });
     }
 
     const Bodies = Matter.Bodies;
@@ -810,7 +810,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           <div className="text-xs text-gray-400">Best Multiplier</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">{totalWon.toFixed(2)} ETH</div>
+                          <div className="text-2xl font-bold text-white">{totalWon.toFixed(5)} ETH</div>
           <div className="text-xs text-gray-400">Total Won</div>
         </div>
       </div>

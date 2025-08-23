@@ -476,7 +476,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                             {bet.win ? (
                               <>
                                 <FaCoins size={12} color="#14D854" />
-                                +{(bet.payout || bet.netResult || 0).toFixed(4)} ETH
+                                +{(bet.payout || bet.netResult || 0).toFixed(9)} ETH
                               </>
                             ) : '-'}
                           </Typography>

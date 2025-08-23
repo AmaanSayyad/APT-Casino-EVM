@@ -38,6 +38,7 @@
     "dotenv": "^17.2.1",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.3",
+    "ethers": "^6.15.0",
     "framer-motion": "^12.10.1",
     "got": "^11.8.6",
     "lottie-react": "^2.4.0",
