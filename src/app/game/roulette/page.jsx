@@ -1007,11 +1007,11 @@ export default function GameRoulette() {
 
   // Roulette Header Component inside the main component to access scrollToElement
   const RouletteHeader = () => {
-    // Sample statistics
+    // Calculate real statistics from betting history
     const gameStatistics = {
-      totalBets: '1,856,342',
-      totalVolume: '8.3M ETH',
-      maxWin: '243,500 ETH'
+      totalBets: bettingHistory.length,
+      totalVolume: bettingHistory.reduce((sum, bet) => sum + parseFloat(bet.amount || 0), 0).toFixed(5),
+      maxWin: bettingHistory.length > 0 ? Math.max(...bettingHistory.map(bet => parseFloat(bet.payout || 0))).toFixed(5) : '0.00000'
     };
 
     return (
@@ -1086,33 +1086,39 @@ export default function GameRoulette() {
               <div className="bg-gradient-to-br from-red-900/20 to-red-800/5 rounded-xl p-4 border border-red-800/20 shadow-lg shadow-red-900/10">
                 {/* Quick stats in top row */}
                 <motion.div
-                  className="grid grid-cols-3 gap-2 mb-4"
+                  className="grid grid-cols-3 gap-2 mb-4 w-full"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
                 >
-                  <div className="flex flex-col items-center p-2 bg-black/20 rounded-lg">
+                  <div className="flex flex-col items-center p-2 bg-black/20 rounded-lg min-w-0 w-full">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600/20 mb-1">
                       <FaChartLine className="text-blue-400" />
                     </div>
                     <div className="text-xs text-white/50 font-sans text-center">Total Bets</div>
-                    <div className="text-white font-display text-sm md:text-base">{gameStatistics.totalBets}</div>
+                    <div className="text-white font-display text-sm md:text-base truncate w-full text-center" title={gameStatistics.totalBets}>
+                      {gameStatistics.totalBets}
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center p-2 bg-black/20 rounded-lg">
+                  <div className="flex flex-col items-center p-2 bg-black/20 rounded-lg min-w-0 w-full">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600/20 mb-1">
                       <FaCoins className="text-yellow-400" />
                     </div>
                     <div className="text-xs text-white/50 font-sans text-center">Volume</div>
-                    <div className="text-white font-display text-sm md:text-base">{gameStatistics.totalVolume}</div>
+                    <div className="text-white font-display text-sm md:text-base truncate w-full text-center" title={`${gameStatistics.totalVolume} ETH`}>
+                      {gameStatistics.totalVolume} ETH
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center p-2 bg-black/20 rounded-lg">
+                  <div className="flex flex-col items-center p-2 bg-black/20 rounded-lg min-w-0 w-full">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-600/20 mb-1">
                       <FaTrophy className="text-yellow-500" />
                     </div>
                     <div className="text-xs text-white/50 font-sans text-center">Max Win</div>
-                    <div className="text-white font-display text-sm md:text-base">{gameStatistics.maxWin}</div>
+                    <div className="text-white font-display text-sm md:text-base truncate w-full text-center" title={`${gameStatistics.maxWin} ETH`}>
+                      {gameStatistics.maxWin} ETH
+                    </div>
                   </div>
                 </motion.div>
 
@@ -1575,17 +1581,23 @@ export default function GameRoulette() {
   };
 
   const lockBet = async () => {
+    // Check if wallet is connected
+    if (!isConnected) {
+      alert("Please connect your Ethereum wallet first to play Roulette!");
+      return;
+    }
+
     if (total <= 0) {
       alert("Please place a bet first");
       return;
     }
 
     // Check Redux balance instead of wallet
-    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
+    const currentBalance = parseFloat(userBalance || '0'); // Balance is already in ETH
     const totalBetAmount = total;
 
     if (currentBalance < totalBetAmount) {
-      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} ETH but need ${totalBetAmount} ETH`);
+      alert(`Insufficient balance. You have ${currentBalance.toFixed(5)} ETH but need ${totalBetAmount.toFixed(5)} ETH`);
       return;
     }
 
@@ -1606,22 +1618,21 @@ export default function GameRoulette() {
       const originalBalance = parseFloat(userBalance || '0');
       
       // Check if user has enough balance
-      if (originalBalance < totalBetAmount * 100000000) {
-        alert(`Insufficient balance. You have ${(originalBalance / 100000000).toFixed(8)} ETH but need ${totalBetAmount} ETH`);
+      if (originalBalance < totalBetAmount) {
+        alert(`Insufficient balance. You have ${originalBalance.toFixed(5)} ETH but need ${totalBetAmount.toFixed(5)} ETH`);
         setSubmitDisabled(false);
         setWheelSpinning(false);
         return;
       }
       
       // Deduct bet amount immediately from balance
-      const betAmountInOctas = totalBetAmount * 100000000;
-      const balanceAfterBet = originalBalance - betAmountInOctas;
-      dispatch(setBalance(balanceAfterBet.toString()));
+      const balanceAfterBet = originalBalance - totalBetAmount;
+      dispatch(setBalance(balanceAfterBet.toFixed(5)));
       
       console.log("Balance deducted:", {
-        originalBalance: originalBalance / 100000000,
-        betAmount: totalBetAmount,
-        balanceAfterBet: balanceAfterBet / 100000000
+        originalBalance: originalBalance.toFixed(5),
+        betAmount: totalBetAmount.toFixed(5),
+        balanceAfterBet: balanceAfterBet.toFixed(5)
       });
 
       // Convert ALL bets into an array for multiple bet processing
@@ -1921,6 +1932,8 @@ export default function GameRoulette() {
           const payoutRatio = getPayoutRatio(bet.type);
 
           if (isWinner) {
+            // payoutRatio = bahsinizi kaç katına çıkarır
+            // Örnek: 35:1 = 36x, 1:1 = 2x, 2:1 = 3x
             const betPayout = bet.amount * payoutRatio; // Full payout (includes original bet)
             totalPayout += betPayout;
             winningBets.push({ ...bet, payout: betPayout, multiplier: payoutRatio });
@@ -1955,15 +1968,15 @@ export default function GameRoulette() {
         // Update user balance with final result
         // netResult = totalPayout (includes original bet since we already deducted it)
         // So we just add the total winnings to the balance after bet deduction
-        const finalBalance = balanceAfterBet + (netResult * 100000000);
-        dispatch(setBalance(finalBalance.toString()));
+        const finalBalance = balanceAfterBet + netResult;
+        dispatch(setBalance(finalBalance.toFixed(5)));
 
         console.log("Balance update:", {
-          originalBalance: originalBalance / 100000000,
-          balanceAfterBet: balanceAfterBet / 100000000,
-          totalPayout: totalPayout,
-          netResult: netResult,
-          finalBalance: finalBalance / 100000000,
+          originalBalance: originalBalance.toFixed(5),
+          balanceAfterBet: balanceAfterBet.toFixed(5),
+          totalPayout: totalPayout.toFixed(5),
+          netResult: netResult.toFixed(5),
+          finalBalance: finalBalance.toFixed(5),
           explanation: "netResult = totalPayout (includes original bet), so we add full winnings"
         });
 
@@ -2002,16 +2015,16 @@ export default function GameRoulette() {
         // Show result notification
         if (netResult > 0) {
           const winMessage = winningBets.length === 1
-            ? `🎉 WINNER! ${winningBets[0].name} - You won ${(netResult - totalBetAmount).toFixed(4)} ETH!`
-            : `🎉 MULTIPLE WINNERS! ${winningBets.length} bets won - Total: ${(netResult - totalBetAmount).toFixed(4)} ETH!`;
+                    ? `🎉 WINNER! ${winningBets[0].name} - You won ${(netResult - totalBetAmount).toFixed(5)} ETH!`
+                    : `🎉 MULTIPLE WINNERS! ${winningBets.length} bets won - Total: ${(netResult - totalBetAmount).toFixed(5)} ETH!`;
 
           setNotificationMessage(winMessage);
           setNotificationSeverity("success");
           setSnackbarMessage(winMessage);
         } else {
-          setNotificationMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} ETH!`);
+          setNotificationMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(5)} ETH!`);
           setNotificationSeverity("error");
-          setSnackbarMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} ETH!`);
+          setSnackbarMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(5)} ETH!`);
         }
         setSnackbarOpen(true);
 
@@ -2491,6 +2504,38 @@ export default function GameRoulette() {
           }}
         >
 
+
+          {/* Balance Display */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: 1,
+              mt: 1,
+              mb: 2,
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: '8px',
+              gap: 1,
+              maxWidth: '98%',
+              mx: 'auto'
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'white',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <FaCoins className="text-yellow-400" />
+              Balance: {isConnected ? `${parseFloat(userBalance || '0').toFixed(5)} ETH` : 'Connect Wallet'}
+            </Typography>
+          </Box>
 
           {/* Recent Results Bar */}
           <Box
@@ -2973,23 +3018,35 @@ export default function GameRoulette() {
                 variant="standard"
                 value={bet}
                 handleChange={handleBetChange}
+                step="0.001"
+                min="0.001"
               />
 
               <Typography color="white" sx={{ opacity: 0.8 }}>
-                Current Bet Total: {currency(total, { pattern: "#" }).format()} ETH
+                Current Bet Total: {total.toFixed(5)} ETH
               </Typography>
 
               {/* Quick Bet Buttons */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-                {[1, 5, 10, 25, 50, 100].map(amount => (
+                {[0.001, 0.01, 0.1, 1, 2, 5].map(amount => (
                   <Button
                     key={amount}
                     onClick={() => setBet(amount)}
                     sx={{
-                      minWidth: '40px',
-                      height: '30px',
+                      minWidth: '50px',
+                      height: '35px',
                       py: 0,
-                      backgroundColor: bet === amount ? 'primary.light' : 'rgba(255,255,255,0.1)'
+                      backgroundColor: bet === amount ? '#10B981' : 'rgba(255,255,255,0.1)', // Seçili için yeşil
+                      color: bet === amount ? 'white' : 'white', // Her iki durumda da beyaz yazı
+                      fontSize: '0.9rem',
+                      fontWeight: bet === amount ? 'bold' : 'normal', // Seçili için kalın yazı
+                      border: bet === amount ? '2px solid #34D399' : '1px solid rgba(255,255,255,0.2)', // Seçili için yeşil border
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        backgroundColor: bet === amount ? '#059669' : 'rgba(255,255,255,0.2)',
+                        transform: 'scale(1.05)',
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                      }
                     }}
                   >
                     {amount}
@@ -3051,7 +3108,7 @@ export default function GameRoulette() {
                       loading={submitDisabled}
                       onClick={lockBet}
                     >
-                      {total > 0 ? `Place Bet (${total.toFixed(2)} ETH)` : 'Place Bet (ETH)'}
+                      {total > 0 ? `Place Bet (${total.toFixed(5)} ETH)` : 'Place Bet (ETH)'}
                     </Button>
                     {submitDisabled && rollResult < 0 && (
                       <Typography color="white" sx={{ opacity: 0.8 }}>
