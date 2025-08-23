@@ -1,19 +1,19 @@
 "use client";
 import { useState, useEffect } from 'react';
 
-// Mock data for Aptos testnet lending market
+// Mock data for Ethereum testnet lending market
 const MOCK_LENDING_DATA = {
   userDeposits: [
     {
-      symbol: 'APT',
-      name: 'Aptos Coin',
+      symbol: 'ETH',
+      name: 'Ethereum Coin',
       amount: '25.5',
       apy: '8.2',
       iconColor: '#F1324D'
     },
     {
-      symbol: 'APTC',
-      name: 'APT Casino Token',
+      symbol: 'ETH',
+      name: 'ETH Casino Token',
       amount: '500.0',
       apy: '12.5',
       iconColor: '#34C759'
@@ -21,16 +21,16 @@ const MOCK_LENDING_DATA = {
   ],
   userBorrows: [
     {
-      symbol: 'APT',
-      name: 'Aptos Coin',
+      symbol: 'ETH',
+      name: 'Ethereum Coin',
       amount: '5.0',
       apy: '15.2',
       iconColor: '#F1324D'
     }
   ],
   marketRates: {
-    APT: { apy: '8.2', ltv: '0.7' },
-    APTC: { apy: '12.5', ltv: '0.6' }
+    ETH: { apy: '8.2', ltv: '0.7' },
+    ETH: { apy: '12.5', ltv: '0.6' }
   }
 };
 
@@ -40,7 +40,7 @@ export const useLendingMarket = () => {
   const [marketRates, setMarketRates] = useState(MOCK_LENDING_DATA.marketRates);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock functions for Aptos testnet
+  // Mock functions for Ethereum testnet
   const depositAsset = async (asset, amount) => {
     setIsLoading(true);
     try {

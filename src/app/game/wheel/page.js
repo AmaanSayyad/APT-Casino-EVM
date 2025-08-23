@@ -79,16 +79,16 @@ export default function Home() {
     if (betAmount <= 0 || isSpinning) return;
 
     // Check if wallet is connected first
-    if (!window.aptos || !window.aptos.account) {
-      alert('Please connect your Aptos wallet first');
+    if (!window.ethereum || !window.ethereum.account) {
+      alert('Please connect your Ethereum wallet first');
       return;
     }
 
     // Check Redux balance
-    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
     
     if (currentBalance < betAmount) {
-      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} APT but need ${betAmount} APT`);
+      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} ETH but need ${betAmount} ETH`);
       return;
     }
 
@@ -97,8 +97,8 @@ export default function Home() {
       setHasSpun(false);
 
       console.log('=== STARTING WHEEL BET WITH REDUX BALANCE ===');
-      console.log('Bet amount (APT):', betAmount);
-      console.log('Current balance (APT):', currentBalance);
+      console.log('Bet amount (ETH):', betAmount);
+      console.log('Current balance (ETH):', currentBalance);
       console.log('Sectors:', noOfSegments);
       
       // Deduct bet amount from Redux balance
@@ -106,7 +106,7 @@ export default function Home() {
       const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
       dispatch(setBalance(newBalance));
       
-      console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'APT');
+      console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'ETH');
       
       // Set up callback to handle wheel animation completion
       window.wheelBetCallback = (landedMultiplier) => {
@@ -156,7 +156,7 @@ export default function Home() {
           
           // Show result and update balance
           if (actualMultiplier > 0) {
-            notification.success(`Congratulations! ${betAmount} APT × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} APT won!`);
+            notification.success(`Congratulations! ${betAmount} ETH × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} ETH won!`);
             
             // Update balance with winnings
             const currentBalanceOctas = parseFloat(userBalance || '0');
@@ -200,8 +200,8 @@ export default function Home() {
     noOfSegments,
   }) => {
     // Check if wallet is connected first
-    if (!window.aptos || !window.aptos.account) {
-      alert('Please connect your Aptos wallet first');
+    if (!window.ethereum || !window.ethereum.account) {
+      alert('Please connect your Ethereum wallet first');
       return;
     }
     
@@ -212,10 +212,10 @@ export default function Home() {
 
     for (let i = 0; i < numberOfBets; i++) {
       // Check Redux balance before each bet
-      const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+      const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
       
       if (currentBalance < currentBet) {
-        alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet} APT but have ${currentBalance.toFixed(8)} APT`);
+        alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet} ETH but have ${currentBalance.toFixed(8)} ETH`);
         break;
       }
 
@@ -301,7 +301,7 @@ export default function Home() {
 
       // Update Redux balance with winnings
       if (actualMultiplier > 0) {
-        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
         const newBalanceWithWin = currentBalance + winAmount;
         const newBalanceWithWinOctas = Math.floor(newBalanceWithWin * 100000000); // Convert back to octas
         dispatch(setBalance(newBalanceWithWinOctas.toString()));
@@ -313,7 +313,7 @@ export default function Home() {
       
       // Show notification for win
       if (actualMultiplier > 0) {
-        notification.success(`Congratulations! ${currentBet} APT × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} APT won!`);
+        notification.success(`Congratulations! ${currentBet} ETH × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} ETH won!`);
       }
 
       // Store history entry
@@ -359,8 +359,8 @@ export default function Home() {
     // Sample statistics
     const gameStatistics = {
       totalBets: '1,856,342',
-      totalVolume: '8.3M APTC',
-      maxWin: '243,500 APTC'
+      totalVolume: '8.3M ETH',
+      maxWin: '243,500 ETH'
     };
     
     return (
@@ -537,7 +537,7 @@ export default function Home() {
               setGameMode={setGameMode}
               betAmount={betAmount}
               setBetAmount={setBetAmount}
-              balance={parseFloat(userBalance || '0') / 100000000} // Convert from octas to APT
+              balance={parseFloat(userBalance || '0') / 100000000} // Convert from octas to ETH
               manulBet={manulBet}
               risk={selectedRisk}
               setRisk={setSelectedRisk}

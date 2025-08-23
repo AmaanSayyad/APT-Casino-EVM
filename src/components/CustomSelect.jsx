@@ -36,13 +36,13 @@ const CustomSelect = ({
   // Format value display for specific fields
   const formatOptionDisplay = (option, fieldName) => {
     if (fieldName === 'betAmount') {
-      return `${option.toLocaleString()} APT`;
+      return `${option.toLocaleString()} ETH`;
     } else if (fieldName === 'mines') {
       return `${option} ${option === 1 ? 'Mine' : 'Mines'}`;
     } else if (fieldName === 'tilesToReveal') {
       return `${option} ${option === 1 ? 'Tile' : 'Tiles'}`;
     } else if (fieldName.includes('stop')) {
-      return `${option.toLocaleString()} APT`;
+      return `${option.toLocaleString()} ETH`;
     } else {
       return option;
     }

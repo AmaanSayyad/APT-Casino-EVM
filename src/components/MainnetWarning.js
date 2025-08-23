@@ -1,13 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 
 export default function MainnetWarning() {
   const [walletNetworkName, setWalletNetworkName] = useState("");
   const [showWarning, setShowWarning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasShownWarning, setHasShownWarning] = useState(false);
-  const { connected } = useWallet();
+  const { isConnected: connected } = useAccount();
 
   // Detect if user is on mobile
   useEffect(() => {
@@ -20,12 +20,12 @@ export default function MainnetWarning() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Detect Aptos wallet network and show warning automatically
+  // Detect Ethereum wallet network and show warning automatically
   useEffect(() => {
     const readNetwork = async () => {
       try {
-        if (typeof window !== 'undefined' && window.aptos?.network) {
-          const n = await window.aptos.network();
+        if (typeof window !== 'undefined' && window.ethereum?.network) {
+          const n = await window.ethereum.network();
           if (n?.name) {
             const networkName = String(n.name).toLowerCase();
             setWalletNetworkName(networkName);
@@ -44,7 +44,7 @@ export default function MainnetWarning() {
       readNetwork();
     }
 
-    const off = window?.aptos?.onNetworkChange?.((n) => {
+    const off = window?.ethereum?.onNetworkChange?.((n) => {
       try { 
         const networkName = String(n?.name || '').toLowerCase();
         setWalletNetworkName(networkName);
@@ -72,18 +72,18 @@ export default function MainnetWarning() {
 
   const switchToTestnet = async () => {
     try {
-      if (window?.aptos?.switchNetwork) {
-        await window.aptos.switchNetwork('Testnet');
-      } else if (window?.aptos?.changeNetwork) {
-        await window.aptos.changeNetwork('Testnet');
+      if (window?.ethereum?.switchNetwork) {
+        await window.ethereum.switchNetwork('Testnet');
+      } else if (window?.ethereum?.changeNetwork) {
+        await window.ethereum.changeNetwork('Testnet');
       } else {
-        alert('Please open your Aptos wallet and switch network to Testnet.');
+        alert('Please open your Ethereum wallet and switch network to Testnet.');
         return;
       }
       setWalletNetworkName('testnet');
       setShowWarning(false);
     } catch (e) {
-      console.error('Failed to switch Aptos network:', e);
+      console.error('Failed to switch Ethereum network:', e);
       alert('Network switch failed. Please switch to Testnet in your wallet.');
     }
   };

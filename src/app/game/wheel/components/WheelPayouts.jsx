@@ -107,12 +107,12 @@ const WheelPayouts = () => {
                             <td className="py-2 px-4">
                               <div className="flex items-center">
                                 <GiPayMoney className="text-yellow-400 mr-2" />
-                                <span>{example.bet} APTC</span>
+                                <span>{example.bet} ETH</span>
                               </div>
                             </td>
                             <td className="py-2 px-4">{example.multiplier}</td>
-                            <td className="py-2 px-4 font-medium text-yellow-300">{example.payout} APTC</td>
-                            <td className="py-2 px-4 font-medium text-green-400">+{example.profit} APTC</td>
+                            <td className="py-2 px-4 font-medium text-yellow-300">{example.payout} ETH</td>
+                            <td className="py-2 px-4 font-medium text-green-400">+{example.profit} ETH</td>
                           </tr>
                         ))}
                       </tbody>
@@ -130,7 +130,7 @@ const WheelPayouts = () => {
                 <div>
                   <h4 className="font-medium text-white mb-2">Maximum Payout</h4>
                   <p className="text-white/70 text-sm">
-                    The maximum payout per spin is capped at 1,000,000 APTC. This means that regardless of your bet amount and the multiplier, you cannot win more than 1,000,000 APTC in a single spin.
+                    The maximum payout per spin is capped at 1,000,000 ETH. This means that regardless of your bet amount and the multiplier, you cannot win more than 1,000,000 ETH in a single spin.
                   </p>
                 </div>
               </div>

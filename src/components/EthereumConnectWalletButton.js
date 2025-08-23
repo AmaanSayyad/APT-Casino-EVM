@@ -1,7 +1,6 @@
 "use client";
 import React from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { MetaMaskConnector } from '@wagmi/connectors/metaMask';
 
 export default function EthereumConnectWalletButton() {
   const { address, isConnected } = useAccount();
@@ -9,9 +8,25 @@ export default function EthereumConnectWalletButton() {
   const { disconnect } = useDisconnect();
 
   const handleConnect = async () => {
-    const metaMaskConnector = connectors.find(connector => connector.id === 'metaMask');
-    if (metaMaskConnector) {
-      await connect({ connector: metaMaskConnector });
+    try {
+      // Try to find MetaMask connector first
+      let connector = connectors.find(c => c.id === 'metaMask');
+      
+      // If not found, try injected connector
+      if (!connector) {
+        connector = connectors.find(c => c.id === 'injected');
+      }
+      
+      if (connector) {
+        console.log('Connecting to wallet...', connector.id);
+        await connect({ connector });
+      } else {
+        console.error('No wallet connector found');
+        alert('No wallet connector found. Please make sure MetaMask is installed.');
+      }
+    } catch (error) {
+      console.error('Connection error:', error);
+      alert(`Connection failed: ${error.message}`);
     }
   };
 

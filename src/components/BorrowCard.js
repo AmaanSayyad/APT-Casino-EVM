@@ -60,19 +60,19 @@ const BorrowCard = ({ asset }) => {
       };
     }
     
-    // Load Aptos wallet data
+    // Load Ethereum wallet data
     const loadWalletData = async () => {
       try {
-        // Set connected state for Aptos testnet
+        // Set connected state for Ethereum testnet
         setIsConnected(true);
         
-        // Set mock balance for Aptos testnet
+        // Set mock balance for Ethereum testnet
         setNativeBalance({
           symbol: asset.symbol,
           formatted: (Math.random() * 5 + 0.5).toFixed(4)
         });
         
-        // Set mock lending market data for Aptos testnet
+        // Set mock lending market data for Ethereum testnet
         setUserBorrows({});
         setUserDeposits({
           [asset.symbol]: {
@@ -98,7 +98,7 @@ const BorrowCard = ({ asset }) => {
   
   function calculateMaxBorrowable() {
     if (isDev) {
-      return asset.symbol === 'APTC' 
+      return asset.symbol === 'ETH' 
         ? 0.5123 
         : Math.random() * 2 + 0.05;
     }
@@ -118,8 +118,8 @@ const BorrowCard = ({ asset }) => {
       return;
     }
     
-    // Show Aptos wallet connection message
-    alert("Please connect your Aptos wallet to continue");
+    // Show Ethereum wallet connection message
+    alert("Please connect your Ethereum wallet to continue");
   };
   
   const handleBorrow = async () => {
@@ -157,7 +157,7 @@ const BorrowCard = ({ asset }) => {
         notification.success(`Successfully borrowed ${borrowAmount} ${asset.symbol}`);
         setBorrowAmount('');
       } else {
-        // For Aptos testnet, simulate borrowing
+        // For Ethereum testnet, simulate borrowing
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         setUserBorrows(prev => ({
@@ -203,7 +203,7 @@ const BorrowCard = ({ asset }) => {
         
         notification.success(`Successfully repaid ${existingBorrow.amount} ${asset.symbol}`);
       } else {
-        // For Aptos testnet, simulate repaying
+        // For Ethereum testnet, simulate repaying
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         setUserBorrows(prev => {

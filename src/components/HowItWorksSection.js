@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import GradientBorderButton from './GradientBorderButton';
-import AptosConnectWalletButton from './AptosConnectWalletButton';
+import EthereumConnectWalletButton from './EthereumConnectWalletButton';
 
 const HowItWorksSection = () => {
   const [activeStep, setActiveStep] = useState(1);
@@ -29,8 +29,8 @@ const HowItWorksSection = () => {
     },
     {
       id: 2,
-      title: 'Get APTC Tokens',
-      description: 'Power your gameplay with APT tokens – our exclusive in-game currency built on Aptos Network. Easily swap from any token or other cryptocurrencies.',
+      title: 'Get ETH Tokens',
+      description: 'Power your gameplay with ETH tokens – our exclusive in-game currency built on Ethereum Network. Easily swap from any token or other cryptocurrencies.',
       emoji: '💰'
     },
     {
@@ -42,7 +42,7 @@ const HowItWorksSection = () => {
     {
       id: 4,
       title: 'Earn Rewards',
-      description: 'Win APTC tokens and unlock exclusive perks through our multi-tiered loyalty program. Earn cashback on losses and gain access to tournaments.',
+      description: 'Win ETH tokens and unlock exclusive perks through our multi-tiered loyalty program. Earn cashback on losses and gain access to tournaments.',
       emoji: '🏆'
     },
   ];
@@ -109,10 +109,10 @@ const HowItWorksSection = () => {
               
               <div className="mt-6 flex justify-center lg:justify-start">
                 {activeStep === 1 ? (
-                  <AptosConnectWalletButton />
+                  <EthereumConnectWalletButton />
                 ) : (
                   <GradientBorderButton className="transform hover:scale-105 transition-transform">
-                    {activeStep === 2 ? 'Get APTC Tokens' : 
+                    {activeStep === 2 ? 'Get ETH Tokens' : 
                      activeStep === 3 ? 'Browse Games' : 'View Rewards'}
                   </GradientBorderButton>
                 )}

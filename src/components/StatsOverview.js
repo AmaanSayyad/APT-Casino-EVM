@@ -42,11 +42,11 @@ const StatsOverview = () => {
                 <div className="h-6 w-20 bg-white/10 animate-pulse rounded"></div>
               ) : (
                 <span className="text-2xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-red-magic to-blue-magic">
-                  {formatNumber(stats.totalAPTCPool)}
+                  {formatNumber(stats.totalETHPool)}
                 </span>
               )}
             </div>
-            <p className="text-xs uppercase mt-1 text-white/70">Total APTC Pool</p>
+            <p className="text-xs uppercase mt-1 text-white/70">Total ETH Pool</p>
           </div>
           
           <div className="flex flex-col items-center">
@@ -55,11 +55,11 @@ const StatsOverview = () => {
                 <div className="h-6 w-16 bg-white/10 animate-pulse rounded"></div>
               ) : (
                 <span className="text-2xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-red-magic to-blue-magic">
-                  {formatPercent(stats.aptcAPY)}
+                  {formatPercent(stats.ethAPY)}
                 </span>
               )}
             </div>
-            <p className="text-xs uppercase mt-1 text-white/70">APTC APY</p>
+            <p className="text-xs uppercase mt-1 text-white/70">ETH APY</p>
           </div>
           
           <div className="flex flex-col items-center">
@@ -68,11 +68,11 @@ const StatsOverview = () => {
                 <div className="h-6 w-16 bg-white/10 animate-pulse rounded"></div>
               ) : (
                 <span className="text-2xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-red-magic to-blue-magic">
-                  {formatPrice(stats.aptcPrice)}
+                  {formatPrice(stats.ethPrice)}
                 </span>
               )}
             </div>
-            <p className="text-xs uppercase mt-1 text-white/70">APTC Price</p>
+            <p className="text-xs uppercase mt-1 text-white/70">ETH Price</p>
           </div>
           
           <div className="flex flex-col items-center">

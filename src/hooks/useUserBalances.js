@@ -1,16 +1,16 @@
 "use client";
 import { useState, useEffect } from 'react';
 
-// Mock data for Aptos testnet
+// Mock data for Ethereum testnet
 const MOCK_BALANCES = {
   native: {
-    symbol: 'APT',
+    symbol: 'ETH',
     formatted: '25.1234',
-    value: '251234000000',
-    decimals: 8
+    value: '25123400000000000000000',
+    decimals: 18
   },
-  aptc: {
-    symbol: 'APTC',
+  eth: {
+    symbol: 'ETH',
     formatted: '500.00',
     value: '500000000000000000000000',
     decimals: 18
@@ -21,7 +21,7 @@ const MOCK_BALANCES = {
 export const useUserBalances = () => {
   const [balances, setBalances] = useState({
     native: null,
-    aptc: null,
+    eth: null,
     other: [],
     loading: true,
     error: null

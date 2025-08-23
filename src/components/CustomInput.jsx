@@ -41,11 +41,11 @@ const CustomInput = ({
   // Format placeholder for specific fields
   const getFormattedPlaceholder = (fieldName) => {
     if (fieldName === 'betAmount') {
-      return 'Enter bet amount in APTC';
+      return 'Enter bet amount in ETH';
     } else if (fieldName === 'stopOnProfit') {
-      return 'Auto-stop at this profit (APTC)';
+      return 'Auto-stop at this profit (ETH)';
     } else if (fieldName === 'stopOnLoss') {
-      return 'Auto-stop at this loss (APTC)';
+      return 'Auto-stop at this loss (ETH)';
     } else if (fieldName === 'numberOfBets') {
       return 'Number of rounds to play';
     } else {
@@ -121,7 +121,7 @@ const CustomInput = ({
         {/* Display units or help text for specific fields */}
         {(name === 'betAmount' || name.includes('stop')) && (
           <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-white/50 pointer-events-none bg-[#190026]/80 px-2 py-1 rounded">
-            APTC
+            ETH
           </div>
         )}
       </div>

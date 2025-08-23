@@ -7,8 +7,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletStatusProvider } from '@/hooks/useWalletStatus';
 import { NotificationProvider } from '@/components/NotificationSystem';
 import { ThemeProvider } from 'next-themes';
-import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react';
-import '@aptos-labs/wallet-adapter-ant-design/dist/index.css';
+import { WagmiConfig, createConfig } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
+import { createPublicClient, http } from 'viem';
+import { injected } from '@wagmi/connectors';
 
 
 const queryClient = new QueryClient();
@@ -22,14 +24,27 @@ export default function Providers({ children }) {
 
   if (!mounted) return null;
 
+  // Wagmi configuration with MetaMask
+  const config = createConfig({
+    chains: [sepolia],
+    connectors: [
+      injected({
+        chains: [sepolia],
+        options: {
+          shimDisconnect: true,
+          UNSTABLE_shimOnConnectSelectAccount: true,
+        },
+      }),
+    ],
+    publicClient: createPublicClient({
+      chain: sepolia,
+      transport: http()
+    }),
+  });
+
   return (
     <Provider store={store}>
-      <AptosWalletAdapterProvider
-        autoConnect={true}
-        onError={(error) => {
-          console.error("Aptos wallet error:", error ? (error.message || error) : "Unknown error");
-        }}
-      >
+      <WagmiConfig config={config}>
         <QueryClientProvider client={queryClient}>
           <NotificationProvider>
             <WalletStatusProvider>
@@ -39,7 +54,7 @@ export default function Providers({ children }) {
             </WalletStatusProvider>
           </NotificationProvider>
         </QueryClientProvider>
-      </AptosWalletAdapterProvider>
+      </WagmiConfig>
     </Provider>
   );
 }

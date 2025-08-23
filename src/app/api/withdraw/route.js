@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { AptosAccount, AptosClient, CoinClient } from 'aptos';
+import { EthereumAccount, EthereumClient, CoinClient } from 'ethereum';
 
 // Kasa cüzdan private key'i - environment variable'dan al
 const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "0x0e5070144da800e1528a09e39ee0f589a4feafb880968de6f0d5479f7258bd82";
-const APTOS_NODE_URL = process.env.NEXT_PUBLIC_APTOS_NETWORK === 'mainnet' 
-  ? 'https://fullnode.mainnet.aptoslabs.com/v1'
-  : 'https://fullnode.testnet.aptoslabs.com/v1';
+const ETHOS_NODE_URL = process.env.NEXT_PUBLIC_ETHOS_NETWORK === 'mainnet' 
+  ? 'https://fullnode.mainnet.ethereumlabs.com/v1'
+  : 'https://fullnode.testnet.ethereumlabs.com/v1';
 
-const client = new AptosClient(APTOS_NODE_URL);
+const client = new EthereumClient(ETHOS_NODE_URL);
 
 export async function POST(request) {
   try {
@@ -31,23 +31,23 @@ export async function POST(request) {
     }
 
     // Create treasury account from private key
-    const treasuryAccount = new AptosAccount(
+    const treasuryAccount = new EthereumAccount(
       new Uint8Array(Buffer.from(TREASURY_PRIVATE_KEY.slice(2), 'hex'))
     );
     
     const coinClient = new CoinClient(client);
     
-    // Convert amount to octas (APT has 8 decimal places)
+    // Convert amount to octas (ETH has 8 decimal places)
     const amountOctas = Math.floor(amount * 100000000);
     
-    console.log(`🏦 Processing withdrawal: ${amount} APT to ${userAddress}`);
+    console.log(`🏦 Processing withdrawal: ${amount} ETH to ${userAddress}`);
     console.log(`📍 Treasury: ${treasuryAccount.address().hex()}`);
     
     // Check treasury balance
     let treasuryBalance = 0;
     try {
       treasuryBalance = await coinClient.checkBalance(treasuryAccount);
-      console.log(`💰 Treasury balance: ${treasuryBalance / 100000000} APT`);
+      console.log(`💰 Treasury balance: ${treasuryBalance / 100000000} ETH`);
     } catch (balanceError) {
       console.log('⚠️ Could not check treasury balance, proceeding with transfer attempt...');
       console.log('Balance error:', balanceError.message);
@@ -55,12 +55,12 @@ export async function POST(request) {
     
     if (treasuryBalance > 0 && treasuryBalance < amountOctas) {
       return NextResponse.json(
-        { error: `Insufficient treasury funds. Available: ${treasuryBalance / 100000000} APT, Requested: ${amount} APT` },
+        { error: `Insufficient treasury funds. Available: ${treasuryBalance / 100000000} ETH, Requested: ${amount} ETH` },
         { status: 400 }
       );
     }
     
-    // Transfer APT from treasury to user
+    // Transfer ETH from treasury to user
     // Convert userAddress to hex string if it's an object
     let formattedUserAddress;
     if (typeof userAddress === 'object' && userAddress.data) {
@@ -86,7 +86,7 @@ export async function POST(request) {
     // Wait for transaction confirmation
     await client.waitForTransaction(txnHash);
     
-    console.log(`✅ Withdrawal successful: ${amount} APT to ${userAddress}, TX: ${txnHash}`);
+    console.log(`✅ Withdrawal successful: ${amount} ETH to ${userAddress}, TX: ${txnHash}`);
     
     return NextResponse.json({
       success: true,
@@ -120,7 +120,7 @@ export async function GET() {
       );
     }
 
-    const treasuryAccount = new AptosAccount(
+    const treasuryAccount = new EthereumAccount(
       new Uint8Array(Buffer.from(TREASURY_PRIVATE_KEY.slice(2), 'hex'))
     );
     
@@ -131,7 +131,7 @@ export async function GET() {
       
       return NextResponse.json({
         treasuryAddress: treasuryAccount.address().hex(),
-        balance: balance / 100000000, // Convert to APT
+        balance: balance / 100000000, // Convert to ETH
         balanceOctas: balance.toString(),
         status: 'active'
       });

@@ -18,7 +18,7 @@ import { HiLightningBolt, HiOutlineTrendingUp, HiOutlineChartBar } from "react-i
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import useWalletStatus from '@/hooks/useWalletStatus';
-import AptosConnectWalletButton from '@/components/AptosConnectWalletButton';
+import EthereumConnectWalletButton from '@/components/EthereumConnectWalletButton';
 import Image from "next/image";
 import "./mines.css";
 import GameDetail from "@/components/GameDetail";
@@ -189,9 +189,9 @@ export default function Mines() {
     const newHistoryItem = {
       id: Date.now(),
       mines: result.mines || 0,
-      bet: `${result.betAmount || 0} APT`,
+      bet: `${result.betAmount || 0} ETH`,
       outcome: result.won ? 'win' : 'loss',
-      payout: result.won ? `${result.payout || 0} APT` : '0 APT',
+      payout: result.won ? `${result.payout || 0} ETH` : '0 ETH',
       multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
       time: 'Just now'
     };

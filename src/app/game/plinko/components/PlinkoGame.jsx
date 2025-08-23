@@ -473,14 +473,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         console.log('Row configuration:', rows, 'rows,', riskLevel, 'risk');
         console.log('Bet amount (latest):', betAmountRef.current);
         console.log('Multiplier:', multiplier, '(bin index:', binIndex, ')');
-        console.log('Reward calculated:', reward, 'APT');
+        console.log('Reward calculated:', reward, 'ETH');
         console.log('==================');
         
         // Add reward to current balance (bet amount already deducted when ball was spawned)
         if (latestBetAmount > 0) {
           console.log('Adding reward to balance:');
           console.log('  Current balance from Redux:', userBalance);
-          console.log('  Current balance in APT:', parseFloat(userBalance) / 100000000);
+          console.log('  Current balance in ETH:', parseFloat(userBalance) / 100000000);
           console.log('  Reward to add:', reward);
           
           const currentBalance = parseFloat(userBalance);
@@ -489,11 +489,11 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           
           console.log('Reward addition:');
           console.log('  Current balance (Redux unit):', currentBalance);
-          console.log('  Current balance (APT):', (currentBalance / 100000000).toFixed(3));
+          console.log('  Current balance (ETH):', (currentBalance / 100000000).toFixed(3));
           console.log('  Reward added (Redux unit):', rewardInReduxUnit);
-          console.log('  Reward added (APT):', reward);
+          console.log('  Reward added (ETH):', reward);
           console.log('  Final balance (Redux unit):', finalBalance);
-          console.log('  Final balance (APT):', (parseFloat(finalBalance) / 100000000).toFixed(3));
+          console.log('  Final balance (ETH):', (parseFloat(finalBalance) / 100000000).toFixed(3));
           
           dispatch(addToBalance(rewardInReduxUnit));
         }
@@ -571,9 +571,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
       console.warn('Insufficient balance for bet:', {
         currentBalance: currentBalance / 100000000,
         betAmount: latestBetAmount,
-        balanceInAPT: (currentBalance / 100000000).toFixed(3)
+        balanceInETH: (currentBalance / 100000000).toFixed(3)
       });
-      alert(`Insufficient balance! You have ${(currentBalance / 100000000).toFixed(3)} APT but need ${latestBetAmount} APT`);
+      alert(`Insufficient balance! You have ${(currentBalance / 100000000).toFixed(3)} ETH but need ${latestBetAmount} ETH`);
       return;
     }
     
@@ -752,7 +752,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
               {betHistory.slice(0, 5).map((bet, index) => (
                 <div key={index} className="w-16 h-16 bg-[#2A0025] border border-[#333947] rounded-lg flex flex-col items-center justify-center p-1">
                   <span className="w-full text-center leading-tight text-xs font-bold text-white">{bet.multiplier}</span>
-                  <span className="w-full text-center leading-tight text-[10px] text-green-400">+{bet.payout} APT</span>
+                  <span className="w-full text-center leading-tight text-[10px] text-green-400">+{bet.payout} ETH</span>
                 </div>
               ))}
               {Array.from({ length: Math.max(0, 5 - Math.min(5, betHistory.length)) }).map((_, index) => (
@@ -810,7 +810,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           <div className="text-xs text-gray-400">Best Multiplier</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">{totalWon.toFixed(2)} APT</div>
+          <div className="text-2xl font-bold text-white">{totalWon.toFixed(2)} ETH</div>
           <div className="text-xs text-gray-400">Total Won</div>
         </div>
       </div>

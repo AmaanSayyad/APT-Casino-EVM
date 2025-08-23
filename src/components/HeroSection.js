@@ -19,7 +19,7 @@ export default function HeroSection() {
         <div className="w-full max-w-2xl mx-auto bg-gradient-to-r from-red-magic/10 to-blue-magic/10 backdrop-blur-sm p-3 rounded-lg border border-purple-500/20 flex justify-center items-center mb-8 mt-8 sm:mt-6">
           <p className="text-sm text-white text-center">
             <span className="bg-purple-600 text-white px-2 py-0.5 rounded-md text-xs font-medium mr-2">NEW</span>
-            High Roller Tournament starting soon! 10,000 APTC prize pool.
+            High Roller Tournament starting soon! 10,000 ETH prize pool.
           </p>
           <button 
             onClick={() => setShowAnnouncement(false)}
@@ -34,13 +34,13 @@ export default function HeroSection() {
         `font-display capitalize flex text-white flex-col text-center items-center gap-6 z-10 max-w-7xl w-full mx-auto ${showAnnouncement ? '' : 'mt-14 sm:mt-14 md:mt-16'}`
       }>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight">
-                        Enter the Aptos Gaming <br /> Arena:{" "}
+                        Enter the Ethereum Gaming <br /> Arena:{" "}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-magic to-blue-magic">
             APT-Casino
           </span>
         </h1>
         <h2 className="text-[#B3B3B3] mt-4 text-lg sm:text-xl leading-relaxed max-w-2xl">
-          Dive into the next generation of gaming with APT-Casino – where every move is powered by <span className="text-white font-semibold">Aptos Blockchain</span>. Discover new games, connect
+          Dive into the next generation of gaming with APT-Casino – where every move is powered by <span className="text-white font-semibold">Ethereum Blockchain</span>. Discover new games, connect
           with friends, and unlock endless possibilities.
         </h2>
         
@@ -70,7 +70,7 @@ export default function HeroSection() {
           <div className="text-center">
             <p className="text-gray-400 text-sm">Jackpot Size</p>
             <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-magic to-blue-magic">
-              {isDev ? '15,000' : '37,500'} APTC
+              {isDev ? '15,000' : '37,500'} ETH
             </p>
           </div>
           <div className="text-center hidden md:block">

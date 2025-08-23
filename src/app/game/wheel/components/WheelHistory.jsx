@@ -97,7 +97,7 @@ const WheelHistory = ({ gameHistory = [] }) => {
               <div className="bg-black/20 rounded-lg p-3 border border-purple-800/10">
                 <div className="text-xs text-white/50 mb-1">Total Volume</div>
                 <div className="text-xl font-bold text-white flex items-center">
-                  {totalVolume} APT
+                  {totalVolume} ETH
                   <Image src={coin} width={20} height={20} alt="coin" className="ml-2" />
                 </div>
               </div>
@@ -105,7 +105,7 @@ const WheelHistory = ({ gameHistory = [] }) => {
               <div className="bg-black/20 rounded-lg p-3 border border-purple-800/10">
                 <div className="text-xs text-white/50 mb-1">Biggest Win</div>
                 <div className="text-xl font-bold text-white flex items-center">
-                  {biggestWin} APT
+                  {biggestWin} ETH
                   <FaTrophy className="ml-2 text-yellow-400 text-sm" />
                 </div>
               </div>
@@ -151,14 +151,14 @@ const WheelHistory = ({ gameHistory = [] }) => {
                       <td className="py-3 px-4">{item.time}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          {item.betAmount} APT
+                          {item.betAmount} ETH
                           <Image src={coin} width={16} height={16} alt="coin" className="ml-1" />
                         </div>
                       </td>
                       <td className="py-3 px-4 font-medium">{item.multiplier}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          {item.payout} APT
+                          {item.payout} ETH
                           <Image src={coin} width={16} height={16} alt="coin" className="ml-1" />
                         </div>
                       </td>

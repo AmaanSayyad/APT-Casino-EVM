@@ -48,8 +48,8 @@ export default function Plinko() {
   const PlinkoHeader = () => {
     const gameStatistics = {
       totalBets: '1,234,567',
-      totalVolume: '5.2M APTC',
-      maxWin: '120,000 APTC'
+      totalVolume: '5.2M ETH',
+      maxWin: '120,000 ETH'
     };
     return (
       <div className="relative text-white px-4 md:px-8 lg:px-20 mb-8 pt-28 md:pt-32 lg:pt-36 mt-6">

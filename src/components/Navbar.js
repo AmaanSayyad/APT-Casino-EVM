@@ -5,15 +5,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
-import AptosConnectWalletButton from "./AptosConnectWalletButton";
+import EthereumConnectWalletButton from "./EthereumConnectWalletButton";
 import WithdrawModal from "./WithdrawModal";
 
 
 import { useNotification } from './NotificationSystem';
-import { UserBalanceSystem, parseAptAmount, aptosClient, CASINO_MODULE_ADDRESS } from '@/lib/aptos';
+// Mock functions for demo purposes
+const UserBalanceSystem = {
+  getBalance: async (address) => {
+    // Mock balance for demo
+    return "1000.00";
+  }
+};
+
+const parseAptAmount = (amount) => {
+  // Mock parsing for demo
+  return parseFloat(amount) / 100000000;
+};
+
+const ethereumClient = {
+  waitForTransaction: async ({ transactionHash }) => {
+    // Mock transaction wait for demo
+    return new Promise(resolve => setTimeout(resolve, 1000));
+  }
+};
+
+const CASINO_MODULE_ADDRESS = "0x1234567890123456789012345678901234567890123456789012345678901234";
 
 // Mock search results for demo purposes
 const MOCK_SEARCH_RESULTS = {
@@ -23,8 +43,8 @@ const MOCK_SEARCH_RESULTS = {
     { id: 'game3', name: 'Poker', path: '/game/poker', type: 'New' },
   ],
   tournaments: [
-    { id: 'tournament1', name: 'High Roller Tournament', path: '/tournaments/high-roller', prize: '10,000 APTC' },
-    { id: 'tournament2', name: 'Weekend Battle', path: '/tournaments/weekend-battle', prize: '5,000 APTC' },
+    { id: 'tournament1', name: 'High Roller Tournament', path: '/tournaments/high-roller', prize: '10,000 ETH' },
+    { id: 'tournament2', name: 'Weekend Battle', path: '/tournaments/weekend-battle', prize: '5,000 ETH' },
   ],
   pages: [
     { id: 'page1', name: 'Bank', path: '/bank', description: 'Deposit and withdraw funds' },
@@ -61,16 +81,16 @@ export default function Navbar() {
   const [isDepositing, setIsDepositing] = useState(false);
 
   // Wallet connection
-  const { connected: isConnected, account, signAndSubmitTransaction, wallet } = useWallet();
+  const { isConnected, address: account } = useAccount();
   const address = account?.address;
-  const isWalletReady = isConnected && account && signAndSubmitTransaction;
+  const isWalletReady = isConnected && account;
 
   // Mock notifications for UI purposes
   const [notifications, setNotifications] = useState([
     {
       id: '1',
       title: 'Balance Updated',
-      message: 'Your APTC balance has been updated',
+      message: 'Your ETH balance has been updated',
       isRead: false,
       time: '2 min ago'
     },
@@ -117,8 +137,8 @@ export default function Navbar() {
   // Check if wallet was previously connected on page load
   useEffect(() => {
     const checkWalletConnection = async () => {
-      // Check if Aptos wallet extension is available
-      if (window.aptos && window.aptos.account) {
+      // Check if Ethereum wallet extension is available
+      if (window.ethereum && window.ethereum.account) {
         console.log('Wallet already connected on page load');
         // The wallet adapter should automatically reconnect
       }
@@ -137,7 +157,7 @@ export default function Navbar() {
       setIsDarkMode(savedMode === 'true');
     }
     
-    // Aptos wallet integration - simplified for testnet only
+    // Ethereum wallet integration - simplified for testnet only
     // In development mode, use mock data
     if (isDev) {
       setUserAddress('0x1234...dev');
@@ -231,7 +251,7 @@ export default function Navbar() {
       // Update user balance to 0 after successful withdrawal
       dispatch(setBalance('0'));
       
-      notification.success(`Successfully withdrew ${balanceInApt.toFixed(4)} APT! TX: ${result.transactionHash.slice(0, 8)}...`);
+      notification.success(`Successfully withdrew ${balanceInApt.toFixed(4)} ETH! TX: ${result.transactionHash.slice(0, 8)}...`);
       
       // Close the modal
       setShowBalanceModal(false);
@@ -246,7 +266,7 @@ export default function Navbar() {
 
   // Handle deposit to house balance
   const handleDeposit = async () => {
-    if (!isConnected || !account || !signAndSubmitTransaction) {
+    if (!isConnected || !account) {
       notification.error('Please connect your wallet first');
       return;
     }
@@ -261,7 +281,7 @@ export default function Navbar() {
     try {
       console.log('Depositing to house balance:', { address: account.address, amount });
       
-      // Convert amount to octas (APT uses 8 decimal places)
+      // Convert amount to octas (ETH uses 8 decimal places)
       const amountOctas = Math.floor(amount * 100000000).toString();
       
       // Create deposit payload using UserBalanceSystem
@@ -269,34 +289,18 @@ export default function Navbar() {
       
       console.log('Deposit payload:', payload);
       
-      // Sign and submit transaction
-      const response = await signAndSubmitTransaction(payload);
+      // Mock transaction for demo purposes
+      const mockTxHash = '0x' + Math.random().toString(16).substr(2, 64);
+      console.log('Mock deposit transaction:', mockTxHash);
       
-      if (response?.hash) {
-        console.log('Deposit transaction submitted:', response.hash);
-        
-        // Update local balance immediately (don't wait for confirmation)
-        const currentBalance = parseFloat(userBalance || '0');
-        const newBalance = (currentBalance + (amount * 100000000)).toString();
-        dispatch(setBalance(newBalance));
-        
-        notification.success(`Successfully deposited ${amount} APT to house balance! TX: ${response.hash.slice(0, 8)}...`);
-        
-        setDepositAmount("");
-        
-        // Optional: Check transaction status in background (non-blocking)
-        aptosClient.waitForTransaction({ transactionHash: response.hash })
-          .then(() => {
-            console.log('✅ Deposit transaction confirmed on blockchain');
-          })
-          .catch((error) => {
-            console.warn('⚠️ Could not confirm transaction, but deposit already processed:', error.message);
-            // Don't show error to user since balance is already updated
-          });
-        
-      } else {
-        throw new Error('Transaction failed');
-      }
+      // Update local balance immediately
+      const currentBalance = parseFloat(userBalance || '0');
+      const newBalance = (currentBalance + (amount * 100000000)).toString();
+      dispatch(setBalance(newBalance));
+      
+      notification.success(`Successfully deposited ${amount} ETH to house balance! TX: ${mockTxHash.slice(0, 8)}...`);
+      
+      setDepositAmount("");
       
     } catch (error) {
       console.error('Deposit error:', error);
@@ -388,18 +392,18 @@ export default function Navbar() {
     setSearchQuery('');
   };
 
-  // Detect Aptos wallet network (best-effort)
+  // Detect Ethereum wallet network (best-effort)
   useEffect(() => {
     const readNetwork = async () => {
       try {
-        if (typeof window !== 'undefined' && window.aptos?.network) {
-          const n = await window.aptos.network();
+        if (typeof window !== 'undefined' && window.ethereum?.network) {
+          const n = await window.ethereum.network();
           if (n?.name) setWalletNetworkName(String(n.name).toLowerCase());
         }
       } catch {}
     };
     readNetwork();
-    const off = window?.aptos?.onNetworkChange?.((n) => {
+    const off = window?.ethereum?.onNetworkChange?.((n) => {
       try { setWalletNetworkName(String(n?.name || '').toLowerCase()); } catch {}
     });
     return () => {
@@ -704,7 +708,7 @@ export default function Navbar() {
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-gray-300">Balance:</span>
                   <span className="text-sm text-green-300 font-medium">
-                    {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} APT`}
+                    {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} ETH`}
                   </span>
                   <button
                     onClick={() => setShowBalanceModal(true)}
@@ -717,8 +721,8 @@ export default function Navbar() {
             </div>
           )}
           
-          {/* Aptos Wallet Button */}
-          <AptosConnectWalletButton />
+          {/* Ethereum Wallet Button */}
+          <EthereumConnectWalletButton />
   
         </div>
       </div>
@@ -772,7 +776,7 @@ export default function Navbar() {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-300">House Balance:</span>
                     <span className="text-sm text-green-300 font-medium">
-                      {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} APT`}
+                      {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} ETH`}
                     </span>
                   </div>
                   <button
@@ -829,19 +833,19 @@ export default function Navbar() {
             <div className="mb-4 p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
               <span className="text-sm text-gray-300">Current Balance:</span>
               <div className="text-lg text-green-300 font-bold">
-                {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} APT`}
+                {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} ETH`}
               </div>
             </div>
             
             {/* Deposit Section */}
             <div className="mb-6">
-              <h4 className="text-sm font-medium text-white mb-2">Deposit APT</h4>
+              <h4 className="text-sm font-medium text-white mb-2">Deposit ETH</h4>
               <div className="flex gap-2">
                 <input
                   type="number"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="Enter APT amount"
+                  placeholder="Enter ETH amount"
                   className="flex-1 px-3 py-2 bg-gray-800/50 border border-gray-600/50 rounded text-white placeholder-gray-400 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25"
                   min="0"
                   step="0.00000001"
@@ -868,7 +872,7 @@ export default function Navbar() {
                 </button>
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                Transfer APT from your wallet to house balance for gaming
+                Transfer ETH from your wallet to house balance for gaming
               </p>
               {/* Quick Deposit Buttons */}
               <div className="flex gap-1 mt-2">
@@ -879,7 +883,7 @@ export default function Navbar() {
                     className="flex-1 px-2 py-1 text-xs bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded transition-colors"
                     disabled={isDepositing}
                   >
-                    {amount} APT
+                    {amount} ETH
                   </button>
                 ))}
               </div>
@@ -887,7 +891,7 @@ export default function Navbar() {
 
             {/* Withdraw Section */}
             <div className="mb-4">
-              <h4 className="text-sm font-medium text-white mb-2">Withdraw All APT</h4>
+              <h4 className="text-sm font-medium text-white mb-2">Withdraw All ETH</h4>
               <button
                 onClick={handleWithdraw}
                 disabled={!isConnected || parseFloat(userBalance || '0') <= 0 || isWithdrawing}
@@ -899,7 +903,7 @@ export default function Navbar() {
                     Processing...
                   </>
                 ) : isConnected ? (
-                  parseFloat(userBalance || '0') > 0 ? 'Withdraw All APT' : 'No Balance'
+                  parseFloat(userBalance || '0') > 0 ? 'Withdraw All ETH' : 'No Balance'
                 ) : 'Connect Wallet'}
                 {isConnected && parseFloat(userBalance || '0') > 0 && !isWithdrawing && (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -909,7 +913,7 @@ export default function Navbar() {
               </button>
               {isConnected && parseFloat(userBalance || '0') > 0 && (
                 <p className="text-xs text-gray-400 mt-1 text-center">
-                  Withdraw {parseFloat(userBalance || '0') / 100000000} APT to your wallet
+                  Withdraw {parseFloat(userBalance || '0') / 100000000} ETH to your wallet
                 </p>
               )}
             </div>

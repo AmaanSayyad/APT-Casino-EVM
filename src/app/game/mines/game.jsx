@@ -42,7 +42,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
 
   // Game Settings
   const defaultSettings = {
-    betAmount: 1, // Default to 1 APT
+    betAmount: 1, // Default to 1 ETH
     mines: 5,
     isAutoBetting: false,
     tilesToReveal: 5,
@@ -305,16 +305,16 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
       // Place bet using Redux balance
       const startGameWithBet = async () => {
         // Check if wallet is connected first
-        if (!window.aptos || !window.aptos.account) {
-          toast.error('Please connect your Aptos wallet first');
+        if (!window.ethereum || !window.ethereum.account) {
+          toast.error('Please connect your Ethereum wallet first');
           return;
         }
         
         // Check Redux balance
-        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
         
         if (currentBalance < settings.betAmount) {
-          toast.error(`Insufficient balance. You have ${currentBalance.toFixed(8)} APT but need ${settings.betAmount} APT`);
+          toast.error(`Insufficient balance. You have ${currentBalance.toFixed(8)} ETH but need ${settings.betAmount} ETH`);
           return;
         }
 
@@ -325,17 +325,17 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
           dispatch(setBalance(newBalance));
           
           console.log('=== STARTING MINES BET WITH REDUX BALANCE ===');
-          console.log('Bet amount (APT):', settings.betAmount);
-          console.log('Current balance (APT):', currentBalance);
+          console.log('Bet amount (ETH):', settings.betAmount);
+          console.log('Current balance (ETH):', currentBalance);
           console.log('Mines count:', settings.mines);
-          console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'APT');
+          console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'ETH');
           
           // Start the game immediately
           setIsPlaying(true);
           setHasPlacedBet(true);
           playSound('bet');
           
-          toast.success(`Bet placed! ${settings.betAmount} APT deducted from balance`);
+          toast.success(`Bet placed! ${settings.betAmount} ETH deducted from balance`);
           toast.info(`Game starting...`);
           
           // Special message if AI-assisted auto betting
@@ -345,7 +345,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
           } else if (settings.isAutoBetting) {
             toast.info(`Auto betting mode: Will reveal ${settings.tilesToReveal || 5} tiles`);
           } else {
-            toast.info(`Bet placed: ${settings.betAmount} APT, ${settings.mines} mines`);
+            toast.info(`Bet placed: ${settings.betAmount} ETH, ${settings.mines} mines`);
           }
           
           // If auto-betting is enabled, automatically reveal tiles with minimal delay
@@ -646,7 +646,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
       
       // Cashout is just a local operation - no blockchain transaction needed
       // The actual payout was already handled in the initial bet transaction
-      toast.success(`Cashed out: ${payout.toFixed(4)} APT (${multiplier.toFixed(2)}x)`);
+      toast.success(`Cashed out: ${payout.toFixed(4)} ETH (${multiplier.toFixed(2)}x)`);
       playSound('cashout');
       
       // Update user balance in Redux store (add payout to current balance)
@@ -971,7 +971,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
               } rounded-lg text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2`}
             >
               <FaCoins className="text-yellow-300" />
-              <span>CASH OUT ({calculatePayout()} APT)</span>
+              <span>CASH OUT ({calculatePayout()} ETH)</span>
             </button>
           </div>
         )}
@@ -981,7 +981,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
           <div className="text-center py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg text-white font-bold">
             <span>🎉 CONGRATULATIONS! YOU WON! 🎉</span>
             <div className="mt-2 text-sm opacity-90">
-              Winnings: {calculatePayout()} APT ({multiplier.toFixed(2)}x)
+              Winnings: {calculatePayout()} ETH ({multiplier.toFixed(2)}x)
             </div>
           </div>
         )}

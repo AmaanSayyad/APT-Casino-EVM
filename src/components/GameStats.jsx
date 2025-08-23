@@ -17,7 +17,7 @@ const GameStats = () => {
           <FaCoins className="text-yellow-400" />
           <span className="uppercase tracking-wider font-display">Volume</span>
         </div>
-        <p className="font-display font-bold text-xl md:text-2xl bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">4.7M APTC</p>
+        <p className="font-display font-bold text-xl md:text-2xl bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">4.7M ETH</p>
       </div>
       
       <div className="flex flex-col items-center md:items-end">
@@ -25,7 +25,7 @@ const GameStats = () => {
           <FaTrophy className="text-green-400" />
           <span className="uppercase tracking-wider font-display">Max Win</span>
         </div>
-        <p className="font-display font-bold text-xl md:text-2xl bg-gradient-to-r from-green-300 to-teal-300 bg-clip-text text-transparent">121,750 APTC</p>
+        <p className="font-display font-bold text-xl md:text-2xl bg-gradient-to-r from-green-300 to-teal-300 bg-clip-text text-transparent">121,750 ETH</p>
       </div>
     </div>
   );

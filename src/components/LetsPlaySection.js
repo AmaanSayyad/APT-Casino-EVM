@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import LaunchGameButton from "./LaunchGameButton";
-import AptosConnectWalletButton from "./AptosConnectWalletButton";
+import EthereumConnectWalletButton from "./EthereumConnectWalletButton";
 import { FaUsers, FaTrophy, FaCoins } from "react-icons/fa";
 
 export default function LetsPlaySection() {
@@ -8,7 +8,7 @@ export default function LetsPlaySection() {
   const [stats, setStats] = useState([
     { icon: <FaUsers className="text-red-magic" />, value: 0, target: 12000, label: "Players" },
     { icon: <FaTrophy className="text-blue-magic" />, value: 0, target: 25000, label: "Winners" },
-    { icon: <FaCoins className="text-yellow-400" />, value: 0, target: 1000000, label: "APT Wagered" }
+    { icon: <FaCoins className="text-yellow-400" />, value: 0, target: 1000000, label: "ETH Wagered" }
   ]);
   
   // Animate stats when component mounts
@@ -63,7 +63,7 @@ export default function LetsPlaySection() {
           
           {/* Action buttons with improved layout */}
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mt-4">
-            <AptosConnectWalletButton />
+            <EthereumConnectWalletButton />
             <LaunchGameButton />
           </div>
           

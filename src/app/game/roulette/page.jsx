@@ -30,13 +30,38 @@ import StrategyGuide from './components/StrategyGuide';
 import RoulettePayout from './components/RoulettePayout';
 import WinProbabilities from './components/WinProbabilities';
 import RouletteHistory from './components/RouletteHistory';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
-import { aptosClient, CASINO_MODULE_ADDRESS, parseAptAmount, CasinoGames } from '@/lib/aptos';
+// Mock functions for demo purposes
+const ethereumClient = {
+  waitForTransaction: async ({ transactionHash }) => {
+    // Mock transaction wait for demo
+    return new Promise(resolve => setTimeout(resolve, 1000));
+  }
+};
+
+const CASINO_MODULE_ADDRESS = "0x1234567890123456789012345678901234567890123456789012345678901234";
+
+const parseAptAmount = (amount) => {
+  // Mock parsing for demo
+  return parseFloat(amount) / 100000000;
+};
+
+const CasinoGames = {
+  roulette: {
+    placeBet: (betType, betValue, amount, numbers = []) => ({
+      // Mock payload for demo
+      betType,
+      betValue,
+      amount,
+      numbers
+    })
+  }
+};
 
 
-// Aptos wallet integration will be added here
+// Ethereum wallet integration will be added here
 
 const TooltipWide = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -985,8 +1010,8 @@ export default function GameRoulette() {
     // Sample statistics
     const gameStatistics = {
       totalBets: '1,856,342',
-      totalVolume: '8.3M APTC',
-      maxWin: '243,500 APTC'
+      totalVolume: '8.3M ETH',
+      maxWin: '243,500 ETH'
     };
 
     return (
@@ -1161,22 +1186,22 @@ export default function GameRoulette() {
   const [bettingHistory, setBettingHistory] = useState([]);
   const [error, setError] = useState(null);
 
-  // Aptos wallet
-  const { account, connected, signAndSubmitTransaction, wallet } = useWallet();
-  const address = account?.address;
-  const isConnected = !!connected;
-  const isWalletReady = isConnected && account && signAndSubmitTransaction && wallet;
+  // Ethereum wallet
+  const { address, isConnected } = useAccount();
+  const account = { address };
+  const connected = isConnected;
+  const isWalletReady = isConnected && address;
   const [realBalance, setRealBalance] = useState('0');
   const { balance } = useToken(address); // Keep for compatibility
   const HOUSE_ADDR = CASINO_MODULE_ADDRESS;
 
-  // Function to fetch real APT balance
+  // Function to fetch real ETH balance
   const fetchRealBalance = useCallback(async () => {
     if (!account?.address) return;
 
     try {
-      const resources = await aptosClient.getAccountResources({ accountAddress: account.address });
-      const aptCoinResource = resources.find(r => r.type === "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>");
+      const resources = await ethereumClient.getAccountResources({ accountAddress: account.address });
+      const aptCoinResource = resources.find(r => r.type === "0x1::coin::CoinStore<0x1::ethereum_coin::EthereumCoin>");
 
       if (aptCoinResource) {
         const balanceValue = aptCoinResource.data.coin.value;
@@ -1556,11 +1581,11 @@ export default function GameRoulette() {
     }
 
     // Check Redux balance instead of wallet
-    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
     const totalBetAmount = total;
 
     if (currentBalance < totalBetAmount) {
-      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} APT but need ${totalBetAmount} APT`);
+      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} ETH but need ${totalBetAmount} ETH`);
       return;
     }
 
@@ -1582,7 +1607,7 @@ export default function GameRoulette() {
       
       // Check if user has enough balance
       if (originalBalance < totalBetAmount * 100000000) {
-        alert(`Insufficient balance. You have ${(originalBalance / 100000000).toFixed(8)} APT but need ${totalBetAmount} APT`);
+        alert(`Insufficient balance. You have ${(originalBalance / 100000000).toFixed(8)} ETH but need ${totalBetAmount} ETH`);
         setSubmitDisabled(false);
         setWheelSpinning(false);
         return;
@@ -1977,16 +2002,16 @@ export default function GameRoulette() {
         // Show result notification
         if (netResult > 0) {
           const winMessage = winningBets.length === 1
-            ? `🎉 WINNER! ${winningBets[0].name} - You won ${(netResult - totalBetAmount).toFixed(4)} APT!`
-            : `🎉 MULTIPLE WINNERS! ${winningBets.length} bets won - Total: ${(netResult - totalBetAmount).toFixed(4)} APT!`;
+            ? `🎉 WINNER! ${winningBets[0].name} - You won ${(netResult - totalBetAmount).toFixed(4)} ETH!`
+            : `🎉 MULTIPLE WINNERS! ${winningBets.length} bets won - Total: ${(netResult - totalBetAmount).toFixed(4)} ETH!`;
 
           setNotificationMessage(winMessage);
           setNotificationSeverity("success");
           setSnackbarMessage(winMessage);
         } else {
-          setNotificationMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} APT!`);
+          setNotificationMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} ETH!`);
           setNotificationSeverity("error");
-          setSnackbarMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} APT!`);
+          setSnackbarMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} ETH!`);
         }
         setSnackbarOpen(true);
 
@@ -2951,7 +2976,7 @@ export default function GameRoulette() {
               />
 
               <Typography color="white" sx={{ opacity: 0.8 }}>
-                Current Bet Total: {currency(total, { pattern: "#" }).format()} APT
+                Current Bet Total: {currency(total, { pattern: "#" }).format()} ETH
               </Typography>
 
               {/* Quick Bet Buttons */}
@@ -3026,7 +3051,7 @@ export default function GameRoulette() {
                       loading={submitDisabled}
                       onClick={lockBet}
                     >
-                      {total > 0 ? `Place Bet (${total.toFixed(2)} APT)` : 'Place Bet (APT)'}
+                      {total > 0 ? `Place Bet (${total.toFixed(2)} ETH)` : 'Place Bet (ETH)'}
                     </Button>
                     {submitDisabled && rollResult < 0 && (
                       <Typography color="white" sx={{ opacity: 0.8 }}>
@@ -3374,9 +3399,9 @@ export default function GameRoulette() {
             {notificationIndex === notificationSteps.RESULT_READY && (
               <Typography>
                 {winnings > 0
-                  ? `🎉 You won ${winnings.toFixed(4)} APT!`
+                  ? `🎉 You won ${winnings.toFixed(4)} ETH!`
                   : winnings < 0
-                  ? `💸 You lost ${Math.abs(winnings).toFixed(4)} APT!`
+                  ? `💸 You lost ${Math.abs(winnings).toFixed(4)} ETH!`
                   : "🤝 Break even!"}
               </Typography>
             )}

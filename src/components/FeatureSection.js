@@ -17,7 +17,7 @@ export default function FeatureSection() {
     {
       id: 2,
       title: "Cross-Chain Liquidity",
-      description: "Stake tokens across multiple chains to earn APTC tokens while playing your favorite games with minimal slippage.",
+      description: "Stake tokens across multiple chains to earn ETH tokens while playing your favorite games with minimal slippage.",
       icon: "⛓️"
     },
     {
@@ -126,7 +126,7 @@ export default function FeatureSection() {
               </div>
               
               <p className="text-white/80 text-sm">
-                APT-Casino leverages Aptos Blockchain to provide a transparent, provably fair gaming
+                APT-Casino leverages Ethereum Blockchain to provide a transparent, provably fair gaming
                 experience with DeFi integration, allowing players to earn passive income through staking.
               </p>
             </div>

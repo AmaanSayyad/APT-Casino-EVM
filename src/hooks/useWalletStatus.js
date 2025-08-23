@@ -7,7 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 
 const WalletStatusContext = createContext(null);
 
@@ -15,12 +15,13 @@ export function WalletStatusProvider({ children }) {
   const isDev = process.env.NODE_ENV === 'development';
 
   const { 
-    connected, 
-    account, 
-    network, 
-    connect, 
-    disconnect
-  } = useWallet();
+    address: account,
+    isConnected: connected,
+    chain: network
+  } = useAccount();
+  
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
 
   const [devWallet, setDevWallet] = useState({
     isConnected: false,
@@ -38,7 +39,7 @@ export function WalletStatusProvider({ children }) {
       setDevWallet({
         isConnected: true,
         address: '0x1234...dev',
-        chain: { id: 'aptos_testnet', name: 'Aptos Testnet' },
+        chain: { id: 'ethereum_testnet', name: 'Ethereum Testnet' },
       });
     }
 
@@ -54,7 +55,7 @@ export function WalletStatusProvider({ children }) {
           ? {
               isConnected: true,
               address: '0x1234...dev',
-              chain: { id: 'aptos_testnet', name: 'Aptos Testnet' },
+              chain: { id: 'ethereum_testnet', name: 'Ethereum Testnet' },
             }
           : {
               isConnected: false,
@@ -76,17 +77,23 @@ export function WalletStatusProvider({ children }) {
       setDevWallet({
         isConnected: true,
         address: '0x1234...dev',
-        chain: { id: 'aptos_testnet', name: 'Aptos Testnet' },
+        chain: { id: 'ethereum_testnet', name: 'Ethereum Testnet' },
       });
       return;
     }
 
     try {
-      await connect();
+      // MetaMask ile bağlan
+      const metaMaskConnector = connectors.find(connector => connector.id === 'metaMask');
+      if (metaMaskConnector) {
+        await connect({ connector: metaMaskConnector });
+      } else {
+        setError('MetaMask connector not found');
+      }
     } catch (err) {
-      setError('Failed to connect to Aptos wallet: ' + err.message);
+      setError('Failed to connect to MetaMask: ' + err.message);
     }
-  }, [connect, isDev]);
+  }, [connect, connectors, isDev]);
 
   const disconnectWallet = useCallback(async () => {
     if (isDev) {
@@ -116,13 +123,13 @@ export function WalletStatusProvider({ children }) {
         isConnected: connected,
         address: account?.address,
         chain: { 
-          id: 'aptos_testnet', 
-          name: 'Aptos Testnet' 
+          id: 'ethereum_testnet', 
+          name: 'Ethereum Testnet' 
         },
       };
 
   useEffect(() => {
-    console.log('🔌 Aptos Wallet connection changed:');
+    console.log('🔌 Ethereum Wallet connection changed:');
     console.log('Connected:', currentStatus.isConnected);
     console.log('Address:', currentStatus.address);
     console.log('Chain:', currentStatus.chain);

@@ -440,7 +440,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                             )}
                           </Box>
                         </TableCell>
-                        <TableCell align="center">{bet.amount || bet.totalBetAmount || 0} APT</TableCell>
+                        <TableCell align="center">{bet.amount || bet.totalBetAmount || 0} ETH</TableCell>
                         <TableCell align="center">
                           <Box 
                             sx={{ 
@@ -476,7 +476,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                             {bet.win ? (
                               <>
                                 <FaCoins size={12} color="#14D854" />
-                                +{(bet.payout || bet.netResult || 0).toFixed(4)} APT
+                                +{(bet.payout || bet.netResult || 0).toFixed(4)} ETH
                               </>
                             ) : '-'}
                           </Typography>
@@ -598,7 +598,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                       </Box>
                       <Typography variant="body2" color="rgba(255,255,255,0.7)">Total Wagered</Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight="bold" color="white" sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{stats.totalWagered} APT</Typography>
+                    <Typography variant="h4" fontWeight="bold" color="white" sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{stats.totalWagered} ETH</Typography>
                   </Box>
                   
                   <Box 
@@ -640,7 +640,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                       color={stats.netProfit >= 0 ? '#14D854' : '#d82633'}
                       sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
                     >
-                      {stats.netProfit >= 0 ? '+' : ''}{stats.netProfit} APT
+                      {stats.netProfit >= 0 ? '+' : ''}{stats.netProfit} ETH
                     </Typography>
                   </Box>
                 </Box>
@@ -760,7 +760,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                             zIndex: 2 
                           }}
                         >
-                          {stats.biggestWin.payout} APT
+                          {stats.biggestWin.payout} ETH
                         </Typography>
                         <Box 
                           sx={{ 
