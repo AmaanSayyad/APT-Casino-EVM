@@ -279,10 +279,16 @@ export default function Home() {
 
     for (let i = 0; i < numberOfBets; i++) {
       // Check Redux balance before each bet
-      const currentBalance = parseFloat(userBalance || '0');
+      let currentBalance = parseFloat(userBalance || '0');
+      
+      console.log(`💰 Auto bet ${i + 1} balance check:`, {
+        currentBalance: currentBalance.toFixed(5),
+        currentBet: currentBet.toFixed(5),
+        hasEnoughBalance: currentBalance >= currentBet
+      });
       
       if (currentBalance < currentBet) {
-        alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet} ETH but have ${currentBalance.toFixed(5)} ETH`);
+        alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet.toFixed(5)} ETH but have ${currentBalance.toFixed(5)} ETH`);
         break;
       }
 
@@ -367,10 +373,16 @@ export default function Home() {
 
       // Update Redux balance with winnings
       if (actualMultiplier > 0) {
-        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to ETH
+        const currentBalance = parseFloat(userBalance || '0');
         const newBalanceWithWin = currentBalance + winAmount;
-        const newBalanceWithWinOctas = Math.floor(newBalanceWithWin * 100000000); // Convert back to octas
-        dispatch(setBalance(newBalanceWithWinOctas.toString()));
+        
+        console.log('💰 Auto bet winnings:', {
+          currentBalance: currentBalance.toFixed(5),
+          winAmount: winAmount.toFixed(5),
+          newBalance: newBalanceWithWin.toFixed(5)
+        });
+        
+        dispatch(setBalance(newBalanceWithWin.toString()));
       }
 
       // Update total profit
@@ -426,7 +438,11 @@ export default function Home() {
       }
 
       // Clamp bet to balance
-      // if (currentBet > balance) currentBet = balance; // This line is no longer needed
+      currentBalance = parseFloat(userBalance || '0');
+      if (currentBet > currentBalance) {
+        console.log(`💰 Bet amount ${currentBet.toFixed(5)} exceeds balance ${currentBalance.toFixed(5)}, clamping to balance`);
+        currentBet = currentBalance;
+      }
       if (currentBet <= 0) currentBet = initialBetAmount;
 
       // Stop conditions

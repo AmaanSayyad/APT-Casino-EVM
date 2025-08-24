@@ -37,19 +37,14 @@ import vrfProofService from '@/services/VRFProofService';
 import { Shield } from "lucide-react";
 import VRFProofRequiredModal from '@/components/VRF/VRFProofRequiredModal';
 
-// Mock functions for demo purposes
-const ethereumClient = {
-  waitForTransaction: async ({ transactionHash }) => {
-    // Mock transaction wait for demo
-    return new Promise(resolve => setTimeout(resolve, 1000));
-  }
-};
+// Ethereum client functions will be added here when needed
 
+// Casino module address for Ethereum
 const CASINO_MODULE_ADDRESS = "0x1234567890123456789012345678901234567890123456789012345678901234";
 
-const parseAptAmount = (amount) => {
-  // Mock parsing for demo
-  return parseFloat(amount) / 100000000;
+const parseEthAmount = (amount) => {
+  // Parse ETH amount
+  return parseFloat(amount);
 };
 
 const CasinoGames = {
@@ -1205,31 +1200,7 @@ export default function GameRoulette() {
   const { balance } = useToken(address); // Keep for compatibility
   const HOUSE_ADDR = CASINO_MODULE_ADDRESS;
 
-  // Function to fetch real ETH balance
-  const fetchRealBalance = useCallback(async () => {
-    if (!account?.address) return;
-
-    try {
-      const resources = await ethereumClient.getAccountResources({ accountAddress: account.address });
-      const aptCoinResource = resources.find(r => r.type === "0x1::coin::CoinStore<0x1::ethereum_coin::EthereumCoin>");
-
-      if (aptCoinResource) {
-        const balanceValue = aptCoinResource.data.coin.value;
-        const formattedBalance = (parseInt(balanceValue) / 100000000).toFixed(8);
-        setRealBalance(formattedBalance);
-        console.log("Real balance updated:", formattedBalance);
-      }
-    } catch (error) {
-      console.error("Error fetching real balance:", error);
-    }
-  }, [account?.address]);
-
-  // Fetch balance when wallet connects
-  useEffect(() => {
-    if (account?.address) {
-      fetchRealBalance();
-    }
-  }, [account?.address, fetchRealBalance]);
+  // Function to fetch real ETH balance will be defined after useSelector
 
   // Sound refs
   const spinSoundRef = useRef(null);
@@ -1395,6 +1366,31 @@ export default function GameRoulette() {
   // Redux state management
   const dispatch = useDispatch();
   const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
+
+  // Function to fetch real ETH balance
+  const fetchRealBalance = useCallback(async () => {
+    if (!account?.address) return;
+
+    try {
+      // For Ethereum, we can use the userBalance from Redux store
+      // or fetch from the blockchain if needed
+      const currentBalance = parseFloat(userBalance || '0');
+      setRealBalance(currentBalance.toFixed(8));
+      console.log("Real balance updated:", currentBalance.toFixed(8));
+    } catch (error) {
+      console.error("Error fetching real balance:", error);
+      // Fallback to Redux balance
+      const currentBalance = parseFloat(userBalance || '0');
+      setRealBalance(currentBalance.toFixed(8));
+    }
+  }, [account?.address, userBalance]);
+
+  // Fetch balance when wallet connects
+  useEffect(() => {
+    if (account?.address) {
+      fetchRealBalance();
+    }
+  }, [account?.address, fetchRealBalance]);
 
   // insert into events
   const insertEvent = (type, oldVal, newVal, ind = 0) => {

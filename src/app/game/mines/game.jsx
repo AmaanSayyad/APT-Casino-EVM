@@ -69,7 +69,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
   const [hasPlacedBet, setHasPlacedBet] = useState(false);
   const [isAutoBetting, setIsAutoBetting] = useState(settings.isAutoBetting);
   const [isGameInfoVisible, setIsGameInfoVisible] = useState(false);
-  const [betAmount, setBetAmount] = useState(settings.betAmount);
+  const [betAmount, setBetAmount] = useState(parseFloat(settings.betAmount));
   const [autoRevealInProgress, setAutoRevealInProgress] = useState(false);
   const [isStartingGame, setIsStartingGame] = useState(false);
   
@@ -132,7 +132,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
   // Calculate current payout
   const calculatePayout = () => {
     // Use the bet amount from settings (form) instead of local state
-    const currentBetAmount = settings.betAmount || 0.001;
+            const currentBetAmount = parseFloat(settings.betAmount) || 0.001;
     const payout = currentBetAmount * multiplier;
     console.log('Calculating payout:', { currentBetAmount, multiplier, payout });
     return payout;
@@ -301,7 +301,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
       
       // Set state with new settings
       setMinesCount(settings.mines);
-      setBetAmount(settings.betAmount);
+              setBetAmount(parseFloat(settings.betAmount));
       setIsAutoBetting(settings.isAutoBetting);
       
       // Place bet using Redux balance
@@ -316,14 +316,14 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
         // Check Redux balance (balance is already in ETH)
         const currentBalance = parseFloat(userBalance || '0');
         
-        if (currentBalance < settings.betAmount) {
-          toast.error(`Insufficient balance. You have ${currentBalance.toFixed(5)} ETH but need ${settings.betAmount} ETH`);
+        if (currentBalance < parseFloat(settings.betAmount)) {
+          toast.error(`Insufficient balance. You have ${currentBalance.toFixed(5)} ETH but need ${parseFloat(settings.betAmount).toFixed(5)} ETH`);
           return;
         }
 
         try {
           // Deduct bet amount from Redux balance
-          const newBalance = (parseFloat(userBalance || '0') - settings.betAmount).toString();
+          const newBalance = (parseFloat(userBalance || '0') - parseFloat(settings.betAmount)).toString();
           dispatch(setBalance(newBalance));
           
           console.log('=== STARTING MINES BET WITH REDUX BALANCE ===');
@@ -337,7 +337,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
           setHasPlacedBet(true);
           playSound('bet');
           
-          toast.success(`Bet placed! ${settings.betAmount.toFixed(5)} ETH deducted from balance`);
+          toast.success(`Bet placed! ${parseFloat(settings.betAmount).toFixed(5)} ETH deducted from balance`);
           toast.info(`Game starting...`);
           
           // Special message if AI-assisted auto betting
@@ -347,7 +347,7 @@ const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
           } else if (settings.isAutoBetting) {
             toast.info(`Auto betting mode: Will reveal ${settings.tilesToReveal || 5} tiles`);
           } else {
-            toast.info(`Bet placed: ${settings.betAmount.toFixed(5)} ETH, ${settings.mines} mines`);
+            toast.info(`Bet placed: ${parseFloat(settings.betAmount).toFixed(5)} ETH, ${settings.mines} mines`);
           }
           
           // If auto-betting is enabled, automatically reveal tiles with minimal delay

@@ -53,10 +53,26 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
   // Cleanup auto betting interval when component unmounts or game mode changes
   useEffect(() => {
     return () => {
+      console.log('🧹 Component unmounting/mode changing, cleaning up all auto betting intervals');
+      
+      // Clear main interval
       if (autoBetInterval) {
-        console.log('Cleaning up auto betting interval on unmount/mode change');
+        console.log('🧹 Clearing main auto betting interval:', autoBetInterval);
         clearInterval(autoBetInterval);
       }
+      
+      // Clear all window intervals
+      if (window.autoBetIntervals && window.autoBetIntervals.length > 0) {
+        console.log('🧹 Clearing all window intervals:', window.autoBetIntervals);
+        window.autoBetIntervals.forEach(intervalId => {
+          console.log('🧹 Clearing interval:', intervalId);
+          clearInterval(intervalId);
+        });
+        window.autoBetIntervals = [];
+      }
+      
+      // Force stop auto playing
+      setIsAutoPlaying(false);
     };
   }, [autoBetInterval, gameMode]);
 
@@ -141,7 +157,6 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     
     if (gameMode === "auto") {
       console.log('Starting auto betting...');
-      setIsAutoPlaying(true);
       startAutoBetting();
     } else if (onBet) {
       console.log('Manual bet...');
@@ -150,8 +165,28 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
   };
 
   const startAutoBetting = () => {
+    console.log('🚀 Starting auto betting...');
+    
+    // Set auto playing to true immediately
+    setIsAutoPlaying(true);
+    
+    // Clear any existing intervals first
+    if (autoBetInterval) {
+      console.log('🧹 Clearing existing auto bet interval:', autoBetInterval);
+      clearInterval(autoBetInterval);
+      setAutoBetInterval(null);
+    }
+    
+    // Clear window intervals
+    if (window.autoBetIntervals && window.autoBetIntervals.length > 0) {
+      console.log('🧹 Clearing existing window intervals:', window.autoBetIntervals);
+      window.autoBetIntervals.forEach(intervalId => clearInterval(intervalId));
+      window.autoBetIntervals = [];
+    }
+    
     const totalBets = parseInt(numberOfBets) || 1;
     let currentBet = 0;
+    let localCurrentBet = 0; // Local variable for interval
     
     // Check if we have enough balance for all bets
     const totalBetAmount = totalBets * parseFloat(betAmount);
@@ -162,11 +197,11 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
       betAmount,
       totalBetAmount,
       currentBalance,
-              balanceInETH: currentBalance.toFixed(5)
+      balanceInETH: currentBalance.toFixed(5)
     });
     
     if (totalBetAmount > currentBalance) {
-              alert(`Insufficient balance for ${totalBets} bets of ${betAmount} ETH each. You need ${totalBetAmount.toFixed(3)} ETH but have ${currentBalance.toFixed(5)} ETH`);
+      alert(`Insufficient balance for ${totalBets} bets of ${betAmount} ETH each. You need ${totalBetAmount.toFixed(3)} ETH but have ${currentBalance.toFixed(5)} ETH`);
       setIsAutoPlaying(false);
       return;
     }
@@ -199,105 +234,102 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
       }
       onBet();
       currentBet++;
-      setNumberOfBets((totalBets - currentBet).toString());
-      console.log('First bet completed, remaining:', totalBets - currentBet);
+      localCurrentBet++;
+      setNumberOfBets((totalBets - localCurrentBet).toString());
+      console.log('First bet completed, currentBet:', currentBet, 'localCurrentBet:', localCurrentBet, 'remaining:', totalBets - localCurrentBet);
     }
     
-    // Then continue with interval - 0.3 seconds between bets
-    const interval = setInterval(() => {
-      console.log('Interval triggered, currentBet:', currentBet, 'totalBets:', totalBets, 'isAutoPlaying:', isAutoPlaying);
+    // Then continue with recursive setTimeout instead of setInterval
+    let shouldContinue = true;
+    
+    const scheduleNextBet = () => {
+      console.log('🔄 Scheduling next bet, localCurrentBet:', localCurrentBet, 'totalBets:', totalBets, 'shouldContinue:', shouldContinue);
       
-      if (currentBet >= totalBets) {
-        console.log('Auto betting finished - all bets completed');
-        clearInterval(interval);
+      // Check if auto betting was stopped
+      if (!shouldContinue) {
+        console.log('🛑 Auto betting was stopped, stopping recursive calls');
         setIsAutoPlaying(false);
         setAutoBetInterval(null);
         
-        // Remove from window object
-        if (window.autoBetIntervals) {
-          const index = window.autoBetIntervals.indexOf(interval);
-          if (index > -1) {
-            window.autoBetIntervals.splice(index, 1);
-          }
-        }
+        // Reset to original value when auto betting is stopped
+        setNumberOfBets("1");
+        return;
+      }
+      
+      if (localCurrentBet >= totalBets) {
+        console.log('✅ Auto betting finished - all bets completed');
+        setIsAutoPlaying(false);
+        setAutoBetInterval(null);
         
         // Reset to original value when all bets are completed
         setNumberOfBets("1");
         return;
       }
-
+      
       // Check VRF proof availability before each bet
       const vrfStats = vrfProofService.getProofStats();
       const availableProofs = vrfStats.availableVRFs.PLINKO || 0;
       
       if (availableProofs <= 0) {
-        console.log('No VRF proofs available, stopping auto betting');
+        console.log('❌ No VRF proofs available, stopping auto betting');
         alert('No VRF proofs available. Auto betting stopped.');
-        clearInterval(interval);
         setIsAutoPlaying(false);
         setAutoBetInterval(null);
-        
-        // Remove from window object
-        if (window.autoBetIntervals) {
-          const index = window.autoBetIntervals.indexOf(interval);
-          if (index > -1) {
-            window.autoBetIntervals.splice(index, 1);
-          }
-        }
         
         return;
       }
       
       if (onBet) {
-        console.log('Auto bet', currentBet + 1, 'starting...');
+        console.log('🎲 Auto bet', localCurrentBet + 1, 'starting...');
         // Notify parent about each auto bet
         if (onBetAmountChange) {
           onBetAmountChange(parseFloat(betAmount));
         }
         onBet();
-        currentBet++;
+        localCurrentBet++;
         // Update the remaining bets count
-        setNumberOfBets((totalBets - currentBet).toString());
-        console.log('Auto bet completed, remaining:', totalBets - currentBet);
+        setNumberOfBets((totalBets - localCurrentBet).toString());
+        console.log('🎯 Auto bet completed, localCurrentBet:', localCurrentBet, 'remaining:', totalBets - localCurrentBet);
+        
+        // Schedule next bet after 1 second
+        setTimeout(scheduleNextBet, 1000);
       }
-    }, 300); // 0.3 second delay between bets
+    };
     
-    // Store the interval ID in state so we can clear it later
-    setAutoBetInterval(interval);
+    // Schedule the first recursive bet
+    setTimeout(scheduleNextBet, 1000);
     
-    // Also store in window object for safety (in case state gets lost)
-    if (!window.autoBetIntervals) {
-      window.autoBetIntervals = [];
+    // Store the shouldContinue reference in window for stopAutoBetting to access
+    if (!window.autoBetShouldContinue) {
+      window.autoBetShouldContinue = {};
     }
-    window.autoBetIntervals.push(interval);
+    window.autoBetShouldContinue['current'] = { shouldContinue, setShouldContinue: (value) => { shouldContinue = value; } };
     
-    console.log('Auto bet interval set with ID:', interval);
+    console.log('✅ Auto bet recursive scheduling started');
   };
 
   const stopAutoBetting = () => {
-    console.log('Stop auto betting called');
+    console.log('🛑 Stop auto betting called');
     
-    // Clear the interval if it exists
-    if (autoBetInterval) {
-      console.log('Clearing interval with ID:', autoBetInterval);
-      clearInterval(autoBetInterval);
-      setAutoBetInterval(null);
-    }
-    
-    // Force stop auto playing
+    // Force stop auto playing first
     setIsAutoPlaying(false);
     
-    // Also clear any remaining intervals (safety measure)
-    if (window.autoBetIntervals) {
-      window.autoBetIntervals.forEach(intervalId => {
-        console.log('Clearing additional interval:', intervalId);
-        clearInterval(intervalId);
+    // Set shouldContinue to false for all active auto betting
+    if (window.autoBetShouldContinue) {
+      Object.values(window.autoBetShouldContinue).forEach(({ setShouldContinue }) => {
+        setShouldContinue(false);
       });
-      window.autoBetIntervals = [];
     }
     
-    console.log('Auto betting stopped successfully');
-    // Don't reset numberOfBets - keep showing remaining bets
+    // Clear shouldContinue references
+    if (window.autoBetShouldContinue) {
+      window.autoBetShouldContinue = {};
+    }
+    
+    // Reset numberOfBets to original value when stopping
+    setNumberOfBets("1");
+    
+    console.log('✅ Auto betting stopped successfully');
   };
 
   const handleRowChange = (newRows) => {
@@ -618,7 +650,7 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
           onClick={stopAutoBetting}
           className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold py-4 px-6 rounded-lg hover:from-red-600 hover:to-pink-600 transition-all transform hover:scale-105"
         >
-          Stop
+          Stop Auto Betting ({numberOfBets} bets remaining)
         </button>
       ) : (
         <div className="space-y-3">
@@ -642,7 +674,7 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
           >
-            {gameMode === "auto" ? "Start Auto Betting" : "Bet"}
+            {gameMode === "auto" ? `Start Auto Betting (${numberOfBets} bets)` : "Bet"}
           </button>
           
           {/* Insufficient Balance Warning */}

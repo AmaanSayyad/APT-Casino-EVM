@@ -19,10 +19,14 @@ export async function POST(request) {
     
     // Validate input
     if (!userAddress || !amount || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid parameters' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({
+        error: 'Invalid parameters'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     }
 
     if (!TREASURY_PRIVATE_KEY) {
@@ -79,19 +83,23 @@ export async function POST(request) {
     
     console.log(`📤 Transaction sent: ${tx.hash}`);
     
-    // Wait for transaction confirmation
-    const receipt = await tx.wait();
+    // Return transaction hash immediately without waiting for confirmation
+    // User can check transaction status on Etherscan
+    console.log(`✅ Withdrawal transaction sent: ${amount} ETH to ${userAddress}, TX: ${tx.hash}`);
     
-    console.log(`✅ Withdrawal successful: ${amount} ETH to ${userAddress}, TX: ${receipt.hash}`);
-    
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
-      transactionHash: receipt.hash,
+      transactionHash: tx.hash,
       amount: amount,
       userAddress: userAddress,
       treasuryAddress: treasuryWallet.address,
-      gasUsed: receipt.gasUsed.toString(),
-      effectiveGasPrice: receipt.effectiveGasPrice.toString()
+      status: 'pending',
+      message: 'Transaction sent successfully. Check Etherscan for confirmation.'
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
     
   } catch (error) {
@@ -101,10 +109,19 @@ export async function POST(request) {
       stack: error.stack,
       name: error.name
     });
-    return NextResponse.json(
-      { error: 'Withdrawal failed: ' + error.message },
-      { status: 500 }
-    );
+    
+    // Ensure error message is a string
+    const errorMessage = error?.message || 'Unknown error occurred';
+    const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : 'Unknown error occurred';
+    
+    return new Response(JSON.stringify({
+      error: `Withdrawal failed: ${safeErrorMessage}`
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 }
 

@@ -37,8 +37,8 @@ const WheelHistory = ({ gameHistory = [] }) => {
   
   // Stats calculation from real data
   const totalBets = historyData.length;
-  const totalVolume = historyData.reduce((sum, item) => sum + (item.betAmount || 0), 0);
-  const biggestWin = historyData.length > 0 ? Math.max(...historyData.map(item => item.payout || 0)) : 0;
+  const totalVolume = historyData.reduce((sum, item) => sum + (parseFloat(item.betAmount) || 0), 0);
+  const biggestWin = historyData.length > 0 ? Math.max(...historyData.map(item => parseFloat(item.payout) || 0)) : 0;
   
   return (
     <div id="history" className="my-16 px-4 md:px-8 lg:px-20 scroll-mt-24">

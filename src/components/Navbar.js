@@ -51,14 +51,8 @@ const UserBalanceSystem = {
         throw new Error(result.error || 'Deposit failed');
       }
       
-      // Update local storage with the EXACT amount deposited (use same key as Redux store)
-      const currentBalance = parseFloat(localStorage.getItem('userBalance') || '0');
-      const newBalance = currentBalance + parseFloat(amount);
-      
-      console.log('UserBalanceSystem deposit:', { userAddress, currentBalance, amount, newBalance });
-      
-      // Store the new balance
-      localStorage.setItem('userBalance', newBalance.toString());
+      // Don't update balance here - it's already updated in the main deposit function
+      console.log('UserBalanceSystem deposit: API call successful, balance already updated');
       
       return result;
     } catch (error) {
@@ -400,25 +394,36 @@ export default function Navbar() {
       });
 
       const result = await response.json();
+      console.log('🔍 Withdraw API response:', result);
 
       if (!response.ok) {
-        throw new Error(result.error || 'Withdrawal failed');
+        const errorMessage = result?.error || 'Withdrawal failed';
+        throw new Error(errorMessage);
       }
 
       // Update user balance to 0 after successful withdrawal
       dispatch(setBalance('0'));
       
       // Clear localStorage balance
-              localStorage.setItem('userBalance', '0');
+      localStorage.setItem('userBalance', '0');
       
-              notification.success(`Successfully withdrew ${balanceInEth.toFixed(5)} ETH! TX: ${result.transactionHash.slice(0, 8)}...`);
+      // Check if transaction hash exists before using it
+      const txHash = result?.transactionHash || 'Unknown';
+      const txDisplay = txHash !== 'Unknown' ? `${txHash.slice(0, 8)}...` : 'Pending';
+      
+      notification.success(`Withdrawal transaction sent! ${balanceInEth.toFixed(5)} ETH will be transferred. TX: ${txDisplay}`);
       
       // Close the modal
       setShowBalanceModal(false);
       
     } catch (error) {
       console.error('Withdraw error:', error);
-      notification.error(`Withdrawal failed: ${error.message}`);
+      
+      // Ensure error message is a string
+      const errorMessage = error?.message || 'Unknown error occurred';
+      const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : 'Unknown error occurred';
+      
+      notification.error(`Withdrawal failed: ${safeErrorMessage}`);
     } finally {
       setIsWithdrawing(false);
     }
@@ -426,6 +431,12 @@ export default function Navbar() {
 
   // Handle deposit to house balance
   const handleDeposit = async () => {
+    // Prevent multiple simultaneous deposits
+    if (isDepositing) {
+      console.log('🚫 Deposit already in progress, ignoring duplicate call');
+      return;
+    }
+    
     if (!isConnected || !address) {
       notification.error('Please connect your wallet first');
       return;
@@ -449,6 +460,7 @@ export default function Navbar() {
     }
 
     setIsDepositing(true);
+    console.log('🚀 Starting deposit process for:', amount, 'ETH');
     try {
       console.log('Depositing to house balance:', { address: address, amount });
       
@@ -529,28 +541,25 @@ export default function Navbar() {
       const currentBalance = parseFloat(userBalance || '0');
       const newBalance = (currentBalance + amount).toString();
       
-      console.log('Balance update:', { currentBalance, amount, newBalance });
+      console.log('🔄 Balance update before dispatch:', { currentBalance, amount, newBalance });
       
-      // Update Redux store immediately
+      // Update Redux store immediately (this will also update localStorage)
       dispatch(setBalance(newBalance));
       
-      // Save balance to localStorage immediately (use same key as Redux store)
-      if (address) {
-        localStorage.setItem('userBalance', newBalance);
-        console.log('Balance saved to localStorage:', newBalance);
-      }
+      console.log('✅ Balance updated in Redux store');
       
-      // Call deposit API to record the transaction
+      // Call deposit API to record the transaction (optional - for logging purposes only)
       try {
         if (address) {
           const result = await UserBalanceSystem.deposit(address, amount, txHash);
-          console.log('Deposit recorded:', result);
+          console.log('✅ Deposit recorded in API:', result);
         } else {
           console.warn('Account address not available for API call');
         }
         
       } catch (apiError) {
-        console.warn('Could not record deposit in API:', apiError);
+        console.warn('⚠️ Could not record deposit in API:', apiError);
+        // Don't fail the deposit if API call fails - balance is already updated
       }
       
       notification.success(`Successfully deposited ${amount} ETH to casino treasury! TX: ${txHash.slice(0, 10)}...`);
