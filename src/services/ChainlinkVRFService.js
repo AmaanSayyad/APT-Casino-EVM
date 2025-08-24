@@ -81,6 +81,10 @@ class ChainlinkVRFService {
 
       console.log('🎲 Starting REAL VRF proof generation with Treasury...');
 
+      // Clear existing transaction hashes for new batch
+      console.log('🧹 Clearing existing transaction hashes for new batch...');
+      this.transactionHashes = [];
+
       // Create contract instance with treasury signer
       const contract = new ethers.Contract(this.contractAddress, this.contractABI, this.treasurySigner);
 
@@ -120,9 +124,9 @@ class ChainlinkVRFService {
             gameTypesArray,
             gameSubTypesArray,
             {
-              gasLimit: gasEstimate + 50000n, // Add buffer
-              maxFeePerGas: ethers.parseUnits('50', 'gwei'), // Max fee per gas
-              maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei') // Max priority fee
+              gasLimit: gasEstimate + 100000n, // Add larger buffer for safety
+              maxFeePerGas: ethers.parseUnits('20', 'gwei'), // Lower max fee per gas
+              maxPriorityFeePerGas: ethers.parseUnits('1', 'gwei') // Lower max priority fee
             }
           );
 

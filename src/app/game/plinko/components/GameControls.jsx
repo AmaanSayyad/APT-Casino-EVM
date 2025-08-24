@@ -170,6 +170,22 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
       setIsAutoPlaying(false);
       return;
     }
+
+    // Check if we have enough VRF proofs for all bets
+    const vrfStats = vrfProofService.getProofStats();
+    const availableProofs = vrfStats.availableVRFs.PLINKO || 0;
+    
+    console.log('Auto betting VRF proof check:', {
+      totalBets,
+      availableProofs,
+      hasEnoughProofs: availableProofs >= totalBets
+    });
+    
+    if (availableProofs < totalBets) {
+      alert(`Insufficient VRF proofs for ${totalBets} bets. You need ${totalBets} proofs but have ${availableProofs} available. Please generate more VRF proofs first.`);
+      setIsAutoPlaying(false);
+      return;
+    }
     
     console.log('Auto betting started with', totalBets, 'bets');
     console.log('onBet function exists:', !!onBet);
@@ -196,8 +212,39 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
         clearInterval(interval);
         setIsAutoPlaying(false);
         setAutoBetInterval(null);
+        
+        // Remove from window object
+        if (window.autoBetIntervals) {
+          const index = window.autoBetIntervals.indexOf(interval);
+          if (index > -1) {
+            window.autoBetIntervals.splice(index, 1);
+          }
+        }
+        
         // Reset to original value when all bets are completed
         setNumberOfBets("1");
+        return;
+      }
+
+      // Check VRF proof availability before each bet
+      const vrfStats = vrfProofService.getProofStats();
+      const availableProofs = vrfStats.availableVRFs.PLINKO || 0;
+      
+      if (availableProofs <= 0) {
+        console.log('No VRF proofs available, stopping auto betting');
+        alert('No VRF proofs available. Auto betting stopped.');
+        clearInterval(interval);
+        setIsAutoPlaying(false);
+        setAutoBetInterval(null);
+        
+        // Remove from window object
+        if (window.autoBetIntervals) {
+          const index = window.autoBetIntervals.indexOf(interval);
+          if (index > -1) {
+            window.autoBetIntervals.splice(index, 1);
+          }
+        }
+        
         return;
       }
       
@@ -217,6 +264,13 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     
     // Store the interval ID in state so we can clear it later
     setAutoBetInterval(interval);
+    
+    // Also store in window object for safety (in case state gets lost)
+    if (!window.autoBetIntervals) {
+      window.autoBetIntervals = [];
+    }
+    window.autoBetIntervals.push(interval);
+    
     console.log('Auto bet interval set with ID:', interval);
   };
 
@@ -230,7 +284,19 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
       setAutoBetInterval(null);
     }
     
+    // Force stop auto playing
     setIsAutoPlaying(false);
+    
+    // Also clear any remaining intervals (safety measure)
+    if (window.autoBetIntervals) {
+      window.autoBetIntervals.forEach(intervalId => {
+        console.log('Clearing additional interval:', intervalId);
+        clearInterval(intervalId);
+      });
+      window.autoBetIntervals = [];
+    }
+    
+    console.log('Auto betting stopped successfully');
     // Don't reset numberOfBets - keep showing remaining bets
   };
 

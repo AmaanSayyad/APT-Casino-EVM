@@ -435,7 +435,7 @@ export default function VRFPregenerationModal({ open, onClose }) {
                     <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', mb: 1 }}>
                       <strong>Multiple Transactions:</strong> VRF proofs were generated across 4 separate transactions:
                     </Typography>
-                    {requestIds.length > 0 && (
+                    {requestIds && requestIds.length > 0 && (
                       <Box sx={{ mt: 1 }}>
                         {(() => {
                           // Get unique transaction hashes from the VRF service
@@ -490,10 +490,10 @@ export default function VRFPregenerationModal({ open, onClose }) {
               )}
 
               {/* Request IDs Summary */}
-              {requestIds.length > 0 && (
+              {requestIds && requestIds.length > 0 && (
                 <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
                   <Typography variant="subtitle2" sx={{ color: '#10B981', mb: 1, fontWeight: 'bold' }}>
-                    VRF Request IDs Generated: {requestIds.length}
+                    VRF Request IDs Generated: {requestIds ? requestIds.length : 0}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem' }}>
                     These proofs are now stored locally and will be available for games.
