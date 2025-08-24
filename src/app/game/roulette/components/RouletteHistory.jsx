@@ -13,6 +13,11 @@ const sampleBets = [
     result: 23, 
     win: true, 
     payout: 20,
+    vrfProof: {
+      requestId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      transactionHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+      logIndex: 42
+    },
     details: {
       winningBets: ['Red: 5 × 2.0x', 'Odd: 3 × 2.0x'],
       losingBets: ['Number 17: -2']
@@ -26,6 +31,11 @@ const sampleBets = [
     result: 16, 
     win: true, 
     payout: 30,
+    vrfProof: {
+      requestId: '0x2345678901bcdef12345678901bcdef12345678901bcdef12345678901bcdef',
+      transactionHash: '0xbcdef12345678901bcdef12345678901bcdef12345678901bcdef12345678901',
+      logIndex: 15
+    },
     details: {
       winningBets: ['Even: 10 × 2.0x', 'Low (1-18): 5 × 2.0x'],
       losingBets: []
@@ -230,6 +240,15 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
     const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
     return redNumbers.includes(num) ? '#d82633' : '#333'; // Red or black
   };
+
+  // Open Etherscan link for transaction hash
+  const openEtherscan = (hash) => {
+    if (hash && hash !== 'unknown') {
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
+      const explorerUrl = `https://${network}.etherscan.io/tx/${hash}`;
+      window.open(explorerUrl, '_blank');
+    }
+  };
   
   return (
     <Paper
@@ -340,6 +359,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                       <TableCell align="center">Amount</TableCell>
                       <TableCell align="center">Result</TableCell>
                       <TableCell align="right">Payout</TableCell>
+                      <TableCell align="center">VRF Proof</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -480,6 +500,61 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                               </>
                             ) : '-'}
                           </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          {bet.vrfProof ? (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center' }}>
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: '#10B981', 
+                                  fontFamily: 'monospace',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 'medium'
+                                }}
+                              >
+                                {bet.vrfProof.requestId ? 
+                                  `${bet.vrfProof.requestId.slice(0, 6)}...${bet.vrfProof.requestId.slice(-4)}` : 
+                                  'N/A'
+                                }
+                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    color: '#3B82F6', 
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    fontSize: '0.65rem',
+                                    '&:hover': { color: '#60A5FA' }
+                                  }}
+                                  onClick={() => openEtherscan(bet.vrfProof.transactionHash)}
+                                  title="View on Etherscan"
+                                >
+                                  TX
+                                </Typography>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    color: 'rgba(255,255,255,0.6)', 
+                                    fontSize: '0.65rem'
+                                  }}
+                                >
+                                  Log: #{bet.vrfProof.logIndex || 0}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          ) : (
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                color: 'rgba(255,255,255,0.4)', 
+                                fontSize: '0.7rem'
+                              }}
+                            >
+                              No proof
+                            </Typography>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

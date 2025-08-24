@@ -10,6 +10,15 @@ const WheelHistory = ({ gameHistory = [] }) => {
   const [activeTab, setActiveTab] = useState("all");
   const [entriesShown, setEntriesShown] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Open Etherscan link for transaction hash
+  const openEtherscan = (hash) => {
+    if (hash && hash !== 'unknown') {
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
+      const explorerUrl = `https://${network}.etherscan.io/tx/${hash}`;
+      window.open(explorerUrl, '_blank');
+    }
+  };
   
   // Use real game history data from props instead of sample data
   const historyData = gameHistory.length > 0 ? gameHistory : [];
@@ -146,6 +155,7 @@ const WheelHistory = ({ gameHistory = [] }) => {
                     <th className="py-3 px-4 text-left">Multiplier</th>
                     <th className="py-3 px-4 text-left">Payout</th>
                     <th className="py-3 px-4 text-left">Result</th>
+                    <th className="py-3 px-4 text-left">VRF Proof</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -172,6 +182,32 @@ const WheelHistory = ({ gameHistory = [] }) => {
                       </td>
                       <td className={`py-3 px-4 font-medium ${item.payout > 0 ? 'text-green-400' : 'text-red-400'}`}>
                         {item.payout > 0 ? `+${item.payout}` : '0'}
+                      </td>
+                      <td className="py-3 px-4">
+                        {item.vrfProof ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-green-400 font-mono">
+                                {item.vrfProof.requestId ? 
+                                  `${item.vrfProof.requestId.slice(0, 6)}...${item.vrfProof.requestId.slice(-4)}` : 
+                                  'N/A'
+                                }
+                              </span>
+                              <button
+                                onClick={() => openEtherscan(item.vrfProof.transactionHash)}
+                                className="text-blue-400 hover:text-blue-300 text-xs underline cursor-pointer"
+                                title="View on Etherscan"
+                              >
+                                TX
+                              </button>
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              Log: #{item.vrfProof.logIndex || 0}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-xs">No proof</span>
+                        )}
                       </td>
                     </tr>
                   ))}

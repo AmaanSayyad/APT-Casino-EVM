@@ -10,6 +10,15 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
   // State for sorting
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
+
+  // Open Etherscan link for transaction hash
+  const openEtherscan = (hash) => {
+    if (hash && hash !== 'unknown') {
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
+      const explorerUrl = `https://${network}.etherscan.io/tx/${hash}`;
+      window.open(explorerUrl, '_blank');
+    }
+  };
   
   // Default user stats if none provided
   const defaultStats = {
@@ -185,7 +194,7 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
       {/* Game History - Enhanced Table */}
       <div className="bg-black/20 rounded-xl border border-purple-800/20 p-4 shadow-inner">
         {/* Header */}
-        <div className="grid grid-cols-6 gap-2 pb-3 text-xs font-medium border-b border-purple-800/30 px-2">
+        <div className="grid grid-cols-7 gap-2 pb-3 text-xs font-medium border-b border-purple-800/30 px-2">
           <div 
             className="flex items-center cursor-pointer hover:text-white/90 transition-colors text-white/70"
             onClick={() => handleSort('id')}
@@ -222,6 +231,12 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
           >
             Time <SortIcon field="time" />
           </div>
+          <div 
+            className="flex items-center cursor-pointer hover:text-white/90 transition-colors text-white/70"
+            onClick={() => handleSort('vrfProof')}
+          >
+            VRF Proof <SortIcon field="vrfProof" />
+          </div>
         </div>
         
         {/* History Items */}
@@ -240,7 +255,7 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
                 boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)",
                 y: -2
               }}
-              className={`grid grid-cols-6 gap-2 p-3 text-xs rounded-lg transition-all ${
+              className={`grid grid-cols-7 gap-2 p-3 text-xs rounded-lg transition-all ${
                 game.outcome === 'win' 
                   ? 'bg-gradient-to-r from-green-900/20 to-green-800/5 border border-green-800/30' 
                   : 'bg-gradient-to-r from-red-900/20 to-red-800/5 border border-red-800/30'
@@ -285,6 +300,32 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
                   <HiClock className="text-purple-400" size={8} />
                 </div>
                 <span>{game.time}</span>
+              </div>
+              <div className="text-white/70 flex items-center justify-center">
+                {game.vrfProof ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-green-400 font-mono">
+                        {game.vrfProof.requestId ? 
+                          `${game.vrfProof.requestId.slice(0, 6)}...${game.vrfProof.requestId.slice(-4)}` : 
+                          'N/A'
+                        }
+                      </span>
+                      <button
+                        onClick={() => openEtherscan(game.vrfProof.transactionHash)}
+                        className="text-blue-400 hover:text-blue-300 text-xs underline cursor-pointer"
+                        title="View on Etherscan"
+                      >
+                        TX
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Log: #{game.vrfProof.logIndex || 0}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-gray-500 text-xs">No proof</span>
+                )}
               </div>
             </motion.div>
           ))}

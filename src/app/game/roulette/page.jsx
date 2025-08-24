@@ -2043,8 +2043,6 @@ export default function GameRoulette() {
           console.error('❌ Error consuming VRF proof for Roulette game:', error);
         }
 
-        setBettingHistory(prev => [newBet, ...prev].slice(0, 100));
-
         console.log("newBet object created:", {
           win: newBet.win,
           payout: newBet.payout,
