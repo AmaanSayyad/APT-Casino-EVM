@@ -20,28 +20,29 @@ const muiTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#3B82F6',
+      main: '#8B2398',
     },
     secondary: {
-      main: '#10B981',
+      main: '#31C4BE',
     },
     background: {
-      default: 'rgba(15, 23, 42, 0.95)',
-      paper: 'rgba(15, 23, 42, 0.95)',
+      default: 'rgba(10, 0, 8, 0.98)',
+      paper: 'rgba(10, 0, 8, 0.98)',
     },
     text: {
       primary: '#FFFFFF',
-      secondary: 'rgba(255, 255, 255, 0.8)',
+      secondary: 'rgba(255, 255, 255, 0.9)',
     },
   },
   components: {
     MuiDialog: {
       styleOverrides: {
         paper: {
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          backgroundColor: 'rgba(10, 0, 8, 0.98)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(148, 163, 184, 0.2)',
+          border: '1px solid rgba(148, 163, 184, 0.3)',
           borderRadius: '16px',
+          background: 'linear-gradient(135deg, rgba(10, 0, 8, 0.98) 0%, rgba(26, 0, 21, 0.98) 100%)',
         },
       },
     },
@@ -49,7 +50,8 @@ const muiTheme = createTheme({
       styleOverrides: {
         root: {
           color: '#FFFFFF',
-          borderBottom: '1px solid rgba(148, 163, 184, 0.2)',
+          borderBottom: '1px solid rgba(148, 163, 184, 0.3)',
+          background: 'linear-gradient(135deg, rgba(139, 35, 152, 0.1) 0%, rgba(49, 196, 190, 0.1) 100%)',
         },
       },
     },
