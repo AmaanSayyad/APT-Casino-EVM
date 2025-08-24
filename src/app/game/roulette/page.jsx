@@ -33,6 +33,10 @@ import RouletteHistory from './components/RouletteHistory';
 import { useAccount } from 'wagmi';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
+import vrfProofService from '@/services/VRFProofService';
+import { Shield } from "lucide-react";
+import VRFProofRequiredModal from '@/components/VRF/VRFProofRequiredModal';
+
 // Mock functions for demo purposes
 const ethereumClient = {
   waitForTransaction: async ({ transactionHash }) => {
@@ -1446,6 +1450,24 @@ export default function GameRoulette() {
       e.preventDefault();
       e.stopPropagation();
     }
+    
+    // Check if VRF proofs are available for this game
+    try {
+      const vrfStats = vrfProofService.getProofStats();
+      const availableProofs = vrfStats.availableVRFs.ROULETTE || 0;
+      
+      if (availableProofs <= 0) {
+        setShowVRFModal(true);
+        return;
+      }
+      
+      console.log(`✅ Roulette game allowed: ${availableProofs} VRF proofs available`);
+    } catch (error) {
+      console.error('❌ Error checking VRF proof availability:', error);
+      alert('❌ Error checking VRF proof availability. Please try again.');
+      return;
+    }
+    
     if (isNaN(newVal)) {
       return;
     }
@@ -1999,6 +2021,30 @@ export default function GameRoulette() {
           }
         };
 
+        // Consume VRF proof for this game
+        try {
+          const vrfResult = vrfProofService.generateRandomFromProof('ROULETTE');
+          console.log('🎲 Roulette game completed, VRF proof consumed:', vrfResult);
+          
+          // Add VRF proof info to the bet result
+          newBet.vrfProof = {
+            proofId: vrfResult.proofId,
+            transactionHash: vrfResult.transactionHash,
+            logIndex: vrfResult.logIndex,
+            requestId: vrfResult.requestId,
+            randomNumber: vrfResult.randomNumber
+          };
+          
+          // Log proof consumption
+          const stats = vrfProofService.getProofStats();
+          console.log(`📊 VRF Proof Stats after Roulette game:`, stats);
+          
+        } catch (error) {
+          console.error('❌ Error consuming VRF proof for Roulette game:', error);
+        }
+
+        setBettingHistory(prev => [newBet, ...prev].slice(0, 100));
+
         console.log("newBet object created:", {
           win: newBet.win,
           payout: newBet.payout,
@@ -2474,6 +2520,14 @@ export default function GameRoulette() {
     // Reset the main bet amount input if you want
     setBet(0.1);
   };
+
+  // VRF proof count
+  const vrfProofCount = useMemo(() => {
+    return vrfProofService.getProofStats().availableVRFs.ROULETTE || 0;
+  }, []);
+
+  // VRF modal state
+  const [showVRFModal, setShowVRFModal] = useState(false);
 
   return (
     <ThemeProvider theme={theme}>
@@ -3005,6 +3059,89 @@ export default function GameRoulette() {
               />
             </Box>
 
+            {/* VRF Proof Status */}
+            <Box sx={{
+              display: "flex",
+              flexDirection: "column",
+              width: { xs: isSmallScreen && !isPortrait ? 'auto' : '100%', md: 'auto' },
+              maxWidth: { xs: isSmallScreen && !isPortrait ? '300px' : '400px', md: 'none' },
+              minWidth: isSmallScreen && !isPortrait ? '250px' : 'auto',
+              mb: 2,
+              p: 2,
+              background: 'linear-gradient(135deg, rgba(139, 35, 152, 0.1) 0%, rgba(49, 196, 190, 0.1) 100%)',
+              border: '1px solid rgba(139, 35, 152, 0.3)',
+              borderRadius: '12px'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Shield size={16} style={{ color: '#8B2398' }} />
+                <Typography variant="subtitle2" sx={{ color: '#8B2398', fontWeight: 'bold' }}>
+                  VRF Proofs
+                </Typography>
+              </Box>
+              
+              {!isConnected ? (
+                <Box sx={{ textAlign: 'center', py: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
+                    Connect wallet to view VRF proofs
+                  </Typography>
+                  <Button
+                    onClick={() => {
+                      if (window.ethereum) {
+                        window.ethereum.request({ method: 'eth_requestAccounts' });
+                      }
+                    }}
+                    sx={{
+                      background: 'linear-gradient(135deg, #8B2398 0%, #31C4BE 100%)',
+                      color: 'white',
+                      px: 2,
+                      py: 1,
+                      fontSize: '0.8rem',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #7C1F87 0%, #2BA8A3 100%)',
+                      }
+                    }}
+                  >
+                    Connect Wallet
+                  </Button>
+                </Box>
+              ) : (
+                <Box>
+                  <Typography variant="h6" sx={{ 
+                    color: vrfProofCount > 0 ? '#10B981' : '#EF4444',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                  }}>
+                    {vrfProofCount} available
+                  </Typography>
+                  
+                  {vrfProofCount <= 0 && (
+                    <Typography variant="body2" sx={{ 
+                      color: '#EF4444', 
+                      fontSize: '0.8rem',
+                      textAlign: 'center',
+                      mt: 1,
+                      bgcolor: 'rgba(239, 68, 68, 0.1)',
+                      p: 1,
+                      borderRadius: '4px'
+                    }}>
+                      Generate proofs first!
+                    </Typography>
+                  )}
+                  
+                  {vrfProofCount > 0 && (
+                    <Typography variant="body2" sx={{ 
+                      color: 'rgba(255,255,255,0.7)',
+                      fontSize: '0.8rem',
+                      textAlign: 'center',
+                      mt: 1
+                    }}>
+                      Each game consumes 1 VRF proof
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Box>
+
             {/* Betting Controls */}
             <Box sx={{
               display: "flex",
@@ -3497,6 +3634,13 @@ export default function GameRoulette() {
           </MuiAlert>
         </Snackbar>
 
+        {/* VRF Proof Required Modal */}
+        <VRFProofRequiredModal
+          open={showVRFModal}
+          onClose={() => setShowVRFModal(false)}
+          gameType="ROULETTE"
+          onGenerateProofs={() => setShowVRFModal(false)}
+        />
 
       </div>
     </ThemeProvider>

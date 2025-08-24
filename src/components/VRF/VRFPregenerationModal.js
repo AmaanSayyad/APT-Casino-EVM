@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { X, Clock, CheckCircle, AlertCircle, Zap, Database, ExternalLink, Copy } from 'lucide-react';
 import { 
   Dialog, 
   DialogTitle, 
@@ -11,14 +10,14 @@ import {
   Box,
   Paper,
   Chip,
+  Divider,
   Grid,
   Card,
   CardContent,
-  Divider,
-  Alert,
-  Snackbar
+  Snackbar,
+  Alert
 } from '@mui/material';
-import { useAccount, useWalletClient } from 'wagmi';
+import { X, Clock, CheckCircle, AlertCircle, Zap, Database, ExternalLink, Copy } from 'lucide-react';
 import ChainlinkVRFService from '../../services/ChainlinkVRFService';
 import vrfProofService from '../../services/VRFProofService';
 
@@ -37,9 +36,13 @@ export default function VRFPregenerationModal({ open, onClose }) {
   const [proofStats, setProofStats] = useState({});
   const [targetAmount] = useState(200); // Target number of VRF proofs to generate
 
-  // Wagmi hooks
-  const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  // Game proof counts state
+  const [gameProofCounts, setGameProofCounts] = useState({
+    MINES: { current: 0, target: 50, status: 'pending' },
+    PLINKO: { current: 0, target: 50, status: 'pending' },
+    ROULETTE: { current: 0, target: 50, status: 'pending' },
+    WHEEL: { current: 0, target: 50, status: 'pending' }
+  });
 
   // Initialize VRF service
   const [vrfService] = useState(() => new ChainlinkVRFService());
@@ -60,14 +63,24 @@ export default function VRFPregenerationModal({ open, onClose }) {
     }
   }, [open]);
 
-  const loadProofStats = () => {
+  const loadProofStats = async () => {
     try {
-      const stats = vrfProofService.getProofStats();
+      const stats = await vrfProofService.getProofStats();
+      console.log('📊 Current proof stats:', stats);
+      
+      // Update game proof counts
+      setGameProofCounts(prev => ({
+        MINES: { ...prev.MINES, current: stats.availableVRFs.MINES || 0 },
+        PLINKO: { ...prev.PLINKO, current: stats.availableVRFs.PLINKO || 0 },
+        ROULETTE: { ...prev.ROULETTE, current: stats.availableVRFs.ROULETTE || 0 },
+        WHEEL: { ...prev.WHEEL, current: stats.availableVRFs.WHEEL || 0 }
+      }));
+
       setProofStats({
-        MINES: stats.MINES?.active || 0,
-        PLINKO: stats.PLINKO?.active || 0,
-        ROULETTE: stats.ROULETTE?.active || 0,
-        WHEEL: stats.WHEEL?.active || 0
+        MINES: stats.availableVRFs.MINES || 0,
+        PLINKO: stats.availableVRFs.PLINKO || 0,
+        ROULETTE: stats.availableVRFs.ROULETTE || 0,
+        WHEEL: stats.availableVRFs.WHEEL || 0
       });
     } catch (error) {
       console.error('Error loading proof stats:', error);
@@ -82,28 +95,49 @@ export default function VRFPregenerationModal({ open, onClose }) {
       setTransactionHash('');
       setRequestIds([]);
 
+      // Reset game statuses
+      setGameProofCounts(prev => ({
+        MINES: { ...prev.MINES, status: 'generating' },
+        PLINKO: { ...prev.PLINKO, status: 'generating' },
+        ROULETTE: { ...prev.ROULETTE, status: 'generating' },
+        WHEEL: { ...prev.WHEEL, status: 'generating' }
+      }));
+
       console.log('🚀 Starting VRF pregeneration with Treasury...');
 
       // Initialize VRF service with treasury
-      const vrfService = new ChainlinkVRFService();
       const initialized = await vrfService.initialize();
-      
+
       if (!initialized) {
         throw new Error('Failed to initialize VRF service with Treasury');
       }
 
       // Generate real VRF proofs on blockchain using Treasury
-      const result = await vrfService.generateVRFProofs();
-      
+      const result = await vrfService.generateVRFProofs((progress) => {
+        setProgress(progress);
+        console.log(`📊 Progress update: ${progress}%`);
+      });
+
       console.log('✅ VRF generation completed:', result);
-      
+
       setTransactionHash(result.transactionHash);
       setRequestIds(result.requestIds);
       setStatus('completed');
       setProgress(100);
-      
+
+      // Update game proof counts with new data
+      await loadProofStats();
+
+      // Update game statuses to completed
+      setGameProofCounts(prev => ({
+        MINES: { ...prev.MINES, status: 'completed' },
+        PLINKO: { ...prev.PLINKO, status: 'completed' },
+        ROULETTE: { ...prev.ROULETTE, status: 'completed' },
+        WHEEL: { ...prev.WHEEL, status: 'completed' }
+      }));
+
       // Show success message
-      setSnackbarMessage(`Successfully generated ${result.requestIds.length} VRF proofs using Treasury! Transaction: ${result.transactionHash}`);
+      setSnackbarMessage(`Successfully generated ${result.requestIds.length} VRF proofs using Treasury!`);
       setShowSnackbar(true);
 
     } catch (error) {
@@ -111,7 +145,15 @@ export default function VRFPregenerationModal({ open, onClose }) {
       setErrorMessage(error.message || 'An error occurred while creating VRF proofs');
       setStatus('error');
       setProgress(0);
-      
+
+      // Reset game statuses to pending
+      setGameProofCounts(prev => ({
+        MINES: { ...prev.MINES, status: 'pending' },
+        PLINKO: { ...prev.PLINKO, status: 'pending' },
+        ROULETTE: { ...prev.ROULETTE, status: 'pending' },
+        WHEEL: { ...prev.WHEEL, status: 'pending' }
+      }));
+
       // Show error message
       setSnackbarMessage(`Error: ${error.message}`);
       setShowSnackbar(true);
@@ -348,9 +390,6 @@ export default function VRFPregenerationModal({ open, onClose }) {
                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
                   Progress: {Math.round(progress)}%
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  {/* currentGenerated is removed, so this will be empty or cause an error */}
-                </Typography>
               </Box>
               <LinearProgress 
                 variant="determinate" 
@@ -391,24 +430,60 @@ export default function VRFPregenerationModal({ open, onClose }) {
                   <Typography variant="subtitle2" sx={{ color: '#10B981', mb: 1, fontWeight: 'bold' }}>
                     Transaction Details:
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem' }}>
-                      TX Hash: {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', mb: 1 }}>
+                      <strong>Multiple Transactions:</strong> VRF proofs were generated across 4 separate transactions:
                     </Typography>
-                    <Button
-                      size="small"
-                      onClick={() => copyToClipboard(transactionHash)}
-                      sx={{ minWidth: 'auto', p: 0.5, color: '#10B981' }}
-                    >
-                      <Copy size={14} />
-                    </Button>
-                    <Button
-                      size="small"
-                      onClick={() => openTransaction(transactionHash)}
-                      sx={{ minWidth: 'auto', p: 0.5, color: '#10B981' }}
-                    >
-                      <ExternalLink size={14} />
-                    </Button>
+                    {requestIds.length > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        {(() => {
+                          // Get unique transaction hashes from the VRF service
+                          const vrfService = new ChainlinkVRFService();
+                          const uniqueHashes = vrfService.transactionHashes || [];
+                          
+                          return uniqueHashes.map((hash, index) => (
+                            <Box key={index} sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1, 
+                              mb: 1,
+                              p: 1,
+                              bgcolor: 'rgba(16, 185, 129, 0.05)',
+                              borderRadius: '4px'
+                            }}>
+                              <Typography variant="body2" sx={{ 
+                                color: 'rgba(255,255,255,0.8)', 
+                                fontSize: '0.8rem',
+                                minWidth: '60px'
+                              }}>
+                                TX {index + 1}:
+                              </Typography>
+                              <Typography variant="body2" sx={{ 
+                                color: 'rgba(255,255,255,0.8)', 
+                                fontSize: '0.8rem',
+                                fontFamily: 'monospace'
+                              }}>
+                                {hash.slice(0, 10)}...{hash.slice(-8)}
+                              </Typography>
+                              <Button
+                                size="small"
+                                onClick={() => copyToClipboard(hash)}
+                                sx={{ minWidth: 'auto', p: 0.5, color: '#10B981' }}
+                              >
+                                <Copy size={14} />
+                              </Button>
+                              <Button
+                                size="small"
+                                onClick={() => openTransaction(hash)}
+                                sx={{ minWidth: 'auto', p: 0.5, color: '#10B981' }}
+                              >
+                                <ExternalLink size={14} />
+                              </Button>
+                            </Box>
+                          ));
+                        })()}
+                      </Box>
+                    )}
                   </Box>
                 </Box>
               )}
@@ -484,7 +559,6 @@ export default function VRFPregenerationModal({ open, onClose }) {
             onClick={startVRFPregeneration}
             variant="contained"
             startIcon={<Zap size={20} />}
-            disabled={!isConnected || !address}
             sx={{
               background: 'linear-gradient(135deg, #8B2398 0%, #31C4BE 100%)',
               color: 'white',
@@ -546,4 +620,4 @@ export default function VRFPregenerationModal({ open, onClose }) {
       </Snackbar>
     </Dialog>
   );
-};
+}

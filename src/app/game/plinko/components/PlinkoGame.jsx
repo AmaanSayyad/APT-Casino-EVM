@@ -3,6 +3,10 @@ import { useState, forwardRef, useImperativeHandle, useCallback, useEffect, useR
 import Matter from 'matter-js';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, addToBalance, subtractFromBalance } from '@/store/balanceSlice';
+import vrfProofService from '@/services/VRFProofService';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaPlay, FaPause, FaRedo, FaCog, FaInfoCircle } from 'react-icons/fa';
+import VRFProofRequiredModal from '@/components/VRF/VRFProofRequiredModal';
 
 const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChange, betAmount = 0, onBetHistoryChange }, ref) => {
   const dispatch = useDispatch();
@@ -15,6 +19,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const [currentRiskLevel, setCurrentRiskLevel] = useState(riskLevel);
   const [isRecreating, setIsRecreating] = useState(false);
   const [betHistory, setBetHistory] = useState([]);
+  const [showVRFModal, setShowVRFModal] = useState(false);
   
   // Physics engine refs
   const engineRef = useRef(null);
@@ -514,7 +519,10 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         
         // Notify parent component about bet history change
         if (onBetHistoryChange) {
+          console.log('📞 PlinkoGame: Calling onBetHistoryChange with:', newBetResult);
           onBetHistoryChange(newBetResult);
+        } else {
+          console.warn('⚠️ PlinkoGame: onBetHistoryChange is not defined!');
         }
         
         setTimeout(() => {
@@ -556,7 +564,12 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
   // Function to start a bet and drop the ball
   const dropBall = useCallback(() => {
-    if (!engineRef.current) return;
+    // Check VRF proofs before starting game
+    const proofStats = vrfProofService.getProofStats();
+    if (proofStats.availableVRFs.PLINKO <= 0) {
+      setShowVRFModal(true);
+      return;
+    }
     
     // Simple balance check - if user doesn't have enough balance, don't allow playing
     const currentBalance = parseFloat(userBalance);
@@ -814,6 +827,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           <div className="text-xs text-gray-400">Total Won</div>
         </div>
       </div>
+
+      {/* VRF Proof Required Modal */}
+      <VRFProofRequiredModal
+        open={showVRFModal}
+        onClose={() => setShowVRFModal(false)}
+        gameType="PLINKO"
+        onGenerateProofs={() => setShowVRFModal(false)}
+      />
     </div>
   );
 });

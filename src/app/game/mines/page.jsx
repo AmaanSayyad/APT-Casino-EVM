@@ -24,6 +24,8 @@ import "./mines.css";
 import GameDetail from "@/components/GameDetail";
 import AIAutoBetting from "./components/AIAutoBetting";
 import AISettingsModal from "./components/AISettingsModal";
+import vrfProofService from '@/services/VRFProofService';
+import VRFProofRequiredModal from '@/components/VRF/VRFProofRequiredModal';
 
 export default function Mines() {
   // Game State
@@ -38,6 +40,7 @@ export default function Mines() {
   // AI Auto Betting State
   const [isAIActive, setIsAIActive] = useState(false);
   const [showAISettings, setShowAISettings] = useState(false);
+  const [showVRFModal, setShowVRFModal] = useState(false);
   const [aiSettings, setAISettings] = useState({
     strategy: 'balanced',
     maxBet: 1,
@@ -107,27 +110,29 @@ export default function Mines() {
     setIsAIActive(!isAIActive);
   };
   
-  // Handle betting form submission
+  // Handle form submission
   const handleFormSubmit = (formData) => {
-    // Disable AI if manual form is submitted
-    if (isAIActive) {
-      setIsAIActive(false);
+    // Check if VRF proofs are available for this game
+    try {
+      const vrfStats = vrfProofService.getProofStats();
+      const availableProofs = vrfStats.availableVRFs.MINES || 0;
+      
+      if (availableProofs <= 0) {
+        setShowVRFModal(true);
+        return;
+      }
+      
+      console.log(`✅ Mines game allowed: ${availableProofs} VRF proofs available`);
+    } catch (error) {
+      console.error('❌ Error checking VRF proof availability:', error);
+      alert('❌ Error checking VRF proof availability. Please try again.');
+      return;
     }
     
-    // Determine if using auto betting by checking if the form contains tilesToReveal field
-    // This is more reliable than checking activeTab since it's based on the actual form data
-    const isAutoBetting = formData.hasOwnProperty('tilesToReveal');
-    
-    console.log("Form submitted:", formData, "Auto betting:", isAutoBetting);
-    
-    // Update bet settings which will be passed to the game component
-    setBetSettings({
-      ...formData,
-      isAutoBetting
-    });
-    
-    // Force game component to re-render with new settings
-    setGameInstance(prev => prev + 1);
+    console.log('Form submitted with data:', formData);
+    setBetSettings(formData);
+    setGameInstance(prev => prev + 1); // Force re-render of game component
+    setActiveTab("Manual"); // Switch to manual tab to show the game
   };
 
   // Handle AI settings save
@@ -186,16 +191,50 @@ export default function Mines() {
 
   // Handle game completion (only when game ends - cashout or mine hit)
   const handleGameComplete = (result) => {
-    const newHistoryItem = {
-      id: Date.now(),
-      mines: result.mines || 0,
-      bet: `${result.betAmount || '0.00000'} ETH`,
-      outcome: result.won ? 'win' : 'loss',
-      payout: result.won ? `${result.payout || '0.00000'} ETH` : '0.00000 ETH',
-      multiplier: result.won ? `${result.multiplier || '0.00'}x` : '0.00x',
-      time: 'Just now'
-    };
-    setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+    // Consume VRF proof for this game
+    try {
+      const vrfResult = vrfProofService.generateRandomFromProof('MINES');
+      console.log('🎲 Mines game completed, VRF proof consumed:', vrfResult);
+      
+      const newHistoryItem = {
+        id: Date.now(),
+        mines: result.mines || 0,
+        bet: `${result.betAmount || '0.00000'} ETH`,
+        outcome: result.won ? 'win' : 'loss',
+        payout: result.won ? `${result.payout || '0.00000'} ETH` : '0.00000 ETH',
+        multiplier: result.won ? `${result.multiplier || '0.00'}x` : '0.00x',
+        time: 'Just now',
+        vrfProof: {
+          proofId: vrfResult.proofId,
+          transactionHash: vrfResult.transactionHash,
+          logIndex: vrfResult.logIndex,
+          requestId: vrfResult.requestId,
+          randomNumber: vrfResult.randomNumber
+        }
+      };
+      
+      setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+      
+      // Log proof consumption
+      const stats = vrfProofService.getProofStats();
+      console.log(`📊 VRF Proof Stats after Mines game:`, stats);
+      
+    } catch (error) {
+      console.error('❌ Error consuming VRF proof for Mines game:', error);
+      
+      // Still add the history item even if VRF proof consumption fails
+      const newHistoryItem = {
+        id: Date.now(),
+        mines: result.mines || 0,
+        bet: `${result.betAmount || '0.00000'} ETH`,
+        outcome: result.won ? 'win' : 'loss',
+        payout: result.won ? `${result.payout || '0.00000'} ETH` : '0.00000 ETH',
+        multiplier: result.won ? `${result.multiplier || '0.00'}x` : '0.00x',
+        time: 'Just now'
+      };
+      
+      setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+    }
   };
 
   // Handle tab change
@@ -877,6 +916,14 @@ export default function Mines() {
           background: rgba(139, 92, 246, 0.5);
         }
       `}</style>
+
+      {/* VRF Proof Required Modal */}
+      <VRFProofRequiredModal
+        open={showVRFModal}
+        onClose={() => setShowVRFModal(false)}
+        gameType="MINES"
+        onGenerateProofs={() => setShowVRFModal(false)}
+      />
     </div>
   );
 }

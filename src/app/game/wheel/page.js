@@ -15,6 +15,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import { useNotification } from '@/components/NotificationSystem';
 import useWalletStatus from '@/hooks/useWalletStatus';
+import vrfProofService from '@/services/VRFProofService';
+import VRFProofRequiredModal from '@/components/VRF/VRFProofRequiredModal';
 
 // Import new components
 import WheelVideo from "./components/WheelVideo";
@@ -32,6 +34,7 @@ export default function Home() {
   const [gameMode, setGameMode] = useState("manual");
   const [currentMultiplier, setCurrentMultiplier] = useState(null);
   const [gameHistory, setGameHistory] = useState([]);
+  const [showVRFModal, setShowVRFModal] = useState(false);
   const [targetMultiplier, setTargetMultiplier] = useState(null);
   const [wheelPosition, setWheelPosition] = useState(0);
   const [hasSpun, setHasSpun] = useState(false);
@@ -84,6 +87,23 @@ export default function Home() {
     console.log('🔌 Wheel Bet - Wallet Status:', { isConnected, userBalance });
     if (!isConnected) {
       alert("Please connect your Ethereum wallet first to play Wheel!");
+      return;
+    }
+
+    // Check if VRF proofs are available for this game
+    try {
+      const vrfStats = vrfProofService.getProofStats();
+      const availableProofs = vrfStats.availableVRFs.WHEEL || 0;
+      
+      if (availableProofs <= 0) {
+        setShowVRFModal(true);
+        return;
+      }
+      
+      console.log(`✅ Wheel game allowed: ${availableProofs} VRF proofs available`);
+    } catch (error) {
+      console.error('❌ Error checking VRF proof availability:', error);
+      alert('❌ Error checking VRF proof availability. Please try again.');
       return;
     }
 
@@ -151,6 +171,29 @@ export default function Home() {
             result: 0,
             color: detectedColor
           };
+
+          // Consume VRF proof for this game
+          try {
+            const vrfResult = vrfProofService.generateRandomFromProof('WHEEL');
+            console.log('🎲 Wheel game completed, VRF proof consumed:', vrfResult);
+            
+            // Add VRF proof info to the history item
+            newHistoryItem.vrfProof = {
+              proofId: vrfResult.proofId,
+              transactionHash: vrfResult.transactionHash,
+              logIndex: vrfResult.logIndex,
+              requestId: vrfResult.requestId,
+              randomNumber: vrfResult.randomNumber
+            };
+            
+            // Log proof consumption
+            const stats = vrfProofService.getProofStats();
+            console.log(`📊 VRF Proof Stats after Wheel game:`, stats);
+            
+          } catch (error) {
+            console.error('❌ Error consuming VRF proof for Wheel game:', error);
+          }
+
           setGameHistory(prev => [newHistoryItem, ...prev]);
           
           setIsSpinning(false);
@@ -203,6 +246,29 @@ export default function Home() {
     // Check if wallet is connected first
     if (!isConnected) {
       alert('Please connect your Ethereum wallet first to play Wheel!');
+      return;
+    }
+    
+    // Check if VRF proofs are available for this game
+    try {
+      const vrfStats = vrfProofService.getProofStats();
+      const availableProofs = vrfStats.availableVRFs.WHEEL || 0;
+      
+      if (availableProofs <= 0) {
+        setShowVRFModal(true);
+        return;
+      }
+      
+      if (availableProofs < numberOfBets) {
+        alert(`❌ Not enough VRF proofs for ${numberOfBets} bets! Only ${availableProofs} proofs available. Please generate more VRF proofs first.`);
+        console.warn(`🚫 Wheel auto betting blocked: Need ${numberOfBets} proofs but only ${availableProofs} available`);
+        return;
+      }
+      
+      console.log(`✅ Wheel auto betting allowed: ${availableProofs} VRF proofs available for ${numberOfBets} bets`);
+    } catch (error) {
+      console.error('❌ Error checking VRF proof availability:', error);
+      alert('❌ Error checking VRF proof availability. Please try again.');
       return;
     }
     
@@ -327,6 +393,28 @@ export default function Home() {
         result: resultPosition,
         color: wheelSegmentData.color
       };
+
+      // Consume VRF proof for this auto bet game
+      try {
+        const vrfResult = vrfProofService.generateRandomFromProof('WHEEL');
+        console.log(`🎲 Wheel auto bet ${i + 1} completed, VRF proof consumed:`, vrfResult);
+        
+        // Add VRF proof info to the history item
+        newHistoryItem.vrfProof = {
+          proofId: vrfResult.proofId,
+          transactionHash: vrfResult.transactionHash,
+          logIndex: vrfResult.logIndex,
+          requestId: vrfResult.requestId,
+          randomNumber: vrfResult.randomNumber
+        };
+        
+        // Log proof consumption
+        const stats = vrfProofService.getProofStats();
+        console.log(`📊 VRF Proof Stats after Wheel auto bet ${i + 1}:`, stats);
+        
+      } catch (error) {
+        console.error(`❌ Error consuming VRF proof for Wheel auto bet ${i + 1}:`, error);
+      }
 
       setGameHistory(prev => [newHistoryItem, ...prev]);
 
@@ -567,6 +655,14 @@ export default function Home() {
       
       {/* Game History */}
       <WheelHistory gameHistory={gameHistory} />
+
+      {/* VRF Proof Required Modal */}
+      <VRFProofRequiredModal
+        open={showVRFModal}
+        onClose={() => setShowVRFModal(false)}
+        gameType="WHEEL"
+        onGenerateProofs={() => setShowVRFModal(false)}
+      />
     </div>
   );
 }

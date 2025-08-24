@@ -18,6 +18,7 @@ class ChainlinkVRFService {
     this.contractABI = this.getContractABI();
     this.provider = null;
     this.treasurySigner = null;
+    this.transactionHashes = []; // Track transaction hashes for proof association
   }
 
   /**
@@ -72,7 +73,7 @@ class ChainlinkVRFService {
   /**
    * Generate 200 VRF proofs (50 for each game type) - REAL BLOCKCHAIN INTERACTION
    */
-  async generateVRFProofs() {
+  async generateVRFProofs(progressCallback = null) {
     try {
       if (!this.provider || !this.treasurySigner) {
         throw new Error('VRF service not initialized');
@@ -85,10 +86,12 @@ class ChainlinkVRFService {
 
       const allRequestIds = [];
       let totalGasUsed = 0n;
+      let totalProgress = 0;
 
       // Send in smaller batches to avoid "Batch too large" error
       const batchSize = 25; // 25 proofs per batch instead of 200
       const gameTypes = ['MINES', 'PLINKO', 'ROULETTE', 'WHEEL'];
+      const totalBatches = gameTypes.length * 2; // 4 games × 2 batches each
       
       for (let gameIndex = 0; gameIndex < gameTypes.length; gameIndex++) {
         const gameType = gameIndex;
@@ -142,6 +145,12 @@ class ChainlinkVRFService {
 
           // Store pending proofs
           await this.storePendingProofs(requestIds, batchGameTypes, batchGameSubTypes, tx.hash, receipt);
+
+          // Update progress
+          totalProgress += (100 / totalBatches);
+          if (progressCallback) {
+            progressCallback(Math.round(totalProgress));
+          }
 
           // Wait a bit between batches to avoid overwhelming the network
           if (batchIndex < 1 || gameIndex < gameTypes.length - 1) {
@@ -197,31 +206,93 @@ class ChainlinkVRFService {
   }
 
   /**
-   * Store pending proofs while waiting for fulfillment
+   * Store pending proofs in local storage
    */
-  async storePendingProofs(requestIds, gameTypes, gameSubTypes, txHash, receipt) {
-    const gameTypeNames = ['MINES', 'PLINKO', 'ROULETTE', 'WHEEL'];
-    
-    for (let i = 0; i < requestIds.length; i++) {
-      const gameType = gameTypeNames[gameTypes[i]];
-      const gameSubType = gameSubTypes[i];
+  async storePendingProofs(requestIds, gameTypes, gameSubTypes, transactionHash, receipt) {
+    try {
+      console.log('💾 Storing pending VRF proofs...');
       
-      const pendingProof = {
-        requestId: requestIds[i],
-        transactionHash: txHash,
-        randomWords: [], // Will be filled when fulfilled
-        blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed.toString(),
-        gameSubType,
-        status: 'pending',
-        timestamp: Date.now()
-      };
+      // Determine which transaction this is (0-3, since we have 4 transactions total)
+      const transactionIndex = this.getTransactionIndex(transactionHash);
+      console.log(`📝 Storing proofs for transaction ${transactionIndex} (${transactionHash})`);
+      
+      for (let i = 0; i < requestIds.length; i++) {
+        const requestId = requestIds[i];
+        const gameType = gameTypes[i];
+        const gameSubType = gameSubTypes[i];
+        
+        // Find the corresponding log for this request ID
+        const logIndex = this.findLogIndexForRequestId(receipt.logs, requestId);
+        
+        const proofData = {
+          requestId,
+          transactionHash,
+          randomWords: [], // Will be filled when fulfilled
+          blockNumber: receipt.blockNumber,
+          gasUsed: receipt.gasUsed.toString(),
+          logIndex: logIndex, // Add log index
+          batchIndex: Math.floor(i / 25), // Which batch this came from
+          transactionIndex: transactionIndex // Which of the 4 transactions this came from
+        };
 
-      // Store as pending proof
-      vrfProofService.addProof(gameType, pendingProof);
+        // Store in VRF proof service
+        await vrfProofService.addProof(this.getGameTypeName(gameType), proofData);
+      }
+
+      console.log(`✅ Stored ${requestIds.length} pending VRF proofs for transaction ${transactionIndex}`);
+    } catch (error) {
+      console.error('❌ Error storing pending proofs:', error);
     }
+  }
 
-    console.log(`📦 Stored ${requestIds.length} pending proofs`);
+  /**
+   * Get transaction index (0-3) based on transaction hash
+   * This helps track which of the 4 VRF generation transactions each proof came from
+   */
+  getTransactionIndex(transactionHash) {
+    // Store transaction hashes in order they were created
+    if (!this.transactionHashes) {
+      this.transactionHashes = [];
+    }
+    
+    // If this is a new transaction hash, add it to the list
+    if (!this.transactionHashes.includes(transactionHash)) {
+      this.transactionHashes.push(transactionHash);
+      console.log(`📝 New transaction hash added: ${transactionHash} at index ${this.transactionHashes.length - 1}`);
+    }
+    
+    // Return the index of this transaction
+    const index = this.transactionHashes.indexOf(transactionHash);
+    console.log(`🔍 Transaction ${transactionHash} is at index ${index} of ${this.transactionHashes.length} total transactions`);
+    
+    return index;
+  }
+
+  /**
+   * Find log index for a specific request ID
+   */
+  findLogIndexForRequestId(logs, requestId) {
+    for (let i = 0; i < logs.length; i++) {
+      const log = logs[i];
+      if (log.topics && log.topics[0]) {
+        const eventSignature = ethers.id('VRFRequested(uint256,uint8,string,address)');
+        if (log.topics[0] === eventSignature) {
+          const logRequestId = ethers.getBigInt(log.topics[1]).toString();
+          if (logRequestId === requestId) {
+            return i; // Return the log index
+          }
+        }
+      }
+    }
+    return 0; // Default to 0 if not found
+  }
+
+  /**
+   * Get game type name from number
+   */
+  getGameTypeName(gameType) {
+    const gameTypes = ['MINES', 'PLINKO', 'ROULETTE', 'WHEEL'];
+    return gameTypes[gameType] || 'UNKNOWN';
   }
 
   /**

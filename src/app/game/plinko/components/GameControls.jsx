@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Plus, Shield, AlertTriangle } from "lucide-react";
 import { useSelector } from 'react-redux';
 import useWalletStatus from '@/hooks/useWalletStatus';
+import vrfProofService from '@/services/VRFProofService';
 
 export default function GameControls({ onBet, onRowChange, onRiskLevelChange, onBetAmountChange, initialRows = 16, initialRiskLevel = "Medium" }) {
   const userBalance = useSelector((state) => state.balance.userBalance);
@@ -17,9 +18,31 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
   const [showRiskDropdown, setShowRiskDropdown] = useState(false);
   const [showRowsDropdown, setShowRowsDropdown] = useState(false);
   const [autoBetInterval, setAutoBetInterval] = useState(null);
+  const [vrfProofCount, setVrfProofCount] = useState(0);
 
   const riskLevels = ["Low", "Medium", "High"];
   const rowOptions = [8, 9, 10, 11, 12, 13, 14, 15, 16];
+
+  // Update VRF proof count
+  useEffect(() => {
+    const updateVrfProofCount = () => {
+      try {
+        const stats = vrfProofService.getProofStats();
+        const availableProofs = stats.availableVRFs.PLINKO || 0;
+        setVrfProofCount(availableProofs);
+      } catch (error) {
+        console.error('Error getting VRF proof count:', error);
+        setVrfProofCount(0);
+      }
+    };
+
+    updateVrfProofCount();
+    
+    // Update every 5 seconds
+    const interval = setInterval(updateVrfProofCount, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Update local state when props change
   useEffect(() => {
@@ -262,6 +285,58 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
 
   return (
     <div className="bg-[#1A0015] rounded-xl border border-[#333947] p-6">
+      {/* VRF Proof Status */}
+      <div className="mb-4 p-3 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg border border-purple-800/30">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Shield size={16} className="text-purple-300" />
+            <span className="text-sm font-medium text-purple-300">VRF Proofs</span>
+          </div>
+          {isConnected && vrfProofCount <= 0 && (
+            <AlertTriangle size={16} className="text-red-400" />
+          )}
+        </div>
+        
+        {!isConnected ? (
+          <div className="text-center py-2">
+            <div className="text-sm text-gray-400 mb-2">Connect wallet to view VRF proofs</div>
+            <button
+              onClick={() => {
+                // Trigger wallet connection
+                if (window.ethereum) {
+                  window.ethereum.request({ method: 'eth_requestAccounts' });
+                }
+              }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <span className={`text-lg font-bold ${
+                vrfProofCount > 0 ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {vrfProofCount} available
+              </span>
+              
+              {vrfProofCount <= 0 && (
+                <span className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
+                  Generate proofs first!
+                </span>
+              )}
+            </div>
+            
+            {vrfProofCount > 0 && (
+              <div className="mt-2 text-xs text-purple-300">
+                Each game consumes 1 VRF proof
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Mode Toggle */}
       <div className="mb-6">
         <div className="flex bg-[#2A0025] rounded-lg p-1">

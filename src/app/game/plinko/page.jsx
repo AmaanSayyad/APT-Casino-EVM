@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux';
 import { motion } from "framer-motion";
 import { GiRollingDices, GiCardRandom, GiPokerHand } from "react-icons/gi";
 import { FaPercentage, FaBalanceScale, FaChartLine, FaCoins, FaTrophy, FaPlay, FaExternalLinkAlt } from "react-icons/fa";
+import vrfProofService from '../../../services/VRFProofService';
 
 export default function Plinko() {
   const userBalance = useSelector((state) => state.balance.userBalance);
@@ -192,7 +193,40 @@ export default function Plinko() {
   };
 
   const handleBetHistoryChange = (newBetResult) => {
-    setGameHistory(prev => [newBetResult, ...prev].slice(0, 100)); // Keep up to last 100 entries
+    console.log('🔍 handleBetHistoryChange called with:', newBetResult);
+    
+    // Consume VRF proof for this game
+    try {
+      console.log('🎯 Attempting to consume VRF proof for PLINKO...');
+      const vrfResult = vrfProofService.generateRandomFromProof('PLINKO');
+      console.log('🎲 Plinko game completed, VRF proof consumed:', vrfResult);
+      
+      // Add VRF proof info to the bet result
+      const enhancedBetResult = {
+        ...newBetResult,
+        vrfProof: {
+          proofId: vrfResult.proofId,
+          transactionHash: vrfResult.transactionHash,
+          logIndex: vrfResult.logIndex,
+          requestId: vrfResult.requestId,
+          randomNumber: vrfResult.randomNumber
+        },
+        timestamp: new Date().toISOString() // Use ISO string for better compatibility
+      };
+      
+      console.log('📝 Enhanced bet result:', enhancedBetResult);
+      setGameHistory(prev => [enhancedBetResult, ...prev].slice(0, 100)); // Keep up to last 100 entries
+      
+      // Log proof consumption
+      const stats = vrfProofService.getProofStats();
+      console.log(`📊 VRF Proof Stats after Plinko game:`, stats);
+      
+    } catch (error) {
+      console.error('❌ Error consuming VRF proof for Plinko game:', error);
+      
+      // Still add the bet result even if VRF proof consumption fails
+      setGameHistory(prev => [newBetResult, ...prev].slice(0, 100));
+    }
   };
 
   const handleRowChange = (newRows) => {

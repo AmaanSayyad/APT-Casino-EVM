@@ -1,239 +1,274 @@
-import React from 'react';
-import { ExternalLink, CheckCircle, XCircle, Hash, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+"use client";
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Chip,
+  Button,
+  Collapse,
+  Grid,
+  Divider
+} from '@mui/material';
+import { ExpandMore, ExpandLess, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import vrfProofService from '../../services/VRFProofService';
 
-/**
- * Game History Card Component
- * Displays individual game result with VRF transaction hash
- */
-const GameHistoryCard = ({ game, showVrfDetails = true }) => {
-  const formatAmount = (amount) => {
-    if (!amount) return '0';
-    const eth = parseFloat(amount) / 1e18;
-    return eth.toFixed(6);
-  };
+const GameHistoryCard = ({ game, gameType }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [proofInfo, setProofInfo] = useState(null);
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  const getGameIcon = (gameType) => {
-    const icons = {
-      ROULETTE: '🎰',
-      MINES: '💣',
-      PLINKO: '🏀',
-      WHEEL: '🎡'
-    };
-    return icons[gameType] || '🎮';
-  };
-
-  const getGameResultDisplay = (gameType, resultData) => {
-    switch (gameType) {
-      case 'ROULETTE':
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold">{resultData.number}</span>
-            <span className={`px-2 py-1 rounded text-xs font-medium ${
-              resultData.color === 'red' ? 'bg-red-100 text-red-800' :
-              resultData.color === 'black' ? 'bg-gray-100 text-gray-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              {resultData.color?.toUpperCase()}
-            </span>
-          </div>
-        );
+  // Get VRF proof info for this game
+  const getProofInfo = () => {
+    if (!proofInfo) {
+      // Try to find proof by game result timestamp or other identifier
+      const consumedProofs = vrfProofService.getConsumedProofs(gameType, 100);
+      const proof = consumedProofs.find(p => 
+        p.gameResult && p.gameResult.timestamp === game.timestamp
+      );
       
-      case 'MINES':
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-sm">
-              {resultData.hitMine ? '💥 Hit Mine' : '✅ Safe'}
-            </span>
-            <span className="text-xs text-gray-500">
-              {resultData.totalMines} mines
-            </span>
-          </div>
-        );
-      
-      case 'PLINKO':
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Slot {resultData.finalSlot}</span>
-            <span className="text-xs text-gray-500">
-              {resultData.rows} rows
-            </span>
-          </div>
-        );
-      
-      case 'WHEEL':
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Segment {resultData.segment}</span>
-            <span className="text-xs text-gray-500">
-              {resultData.multiplier}x
-            </span>
-          </div>
-        );
-      
-      default:
-        return <span className="text-sm text-gray-500">Game result</span>;
+      if (proof) {
+        setProofInfo(proof);
+      }
     }
+    return proofInfo;
   };
 
-  const isWin = game.isWin;
-  const profitLoss = parseFloat(game.profitLoss || 0);
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    // You can add a toast notification here
+  };
+
+  const openTransaction = (txHash, logIndex) => {
+    const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
+    const explorerUrl = `https://${network}.etherscan.io/tx/${txHash}#eventlog`;
+    window.open(explorerUrl, '_blank');
+  };
+
+  const formatTimestamp = (timestamp) => {
+    return new Date(timestamp).toLocaleString();
+  };
+
+  const getGameResultColor = (result) => {
+    if (result === 'win') return 'success';
+    if (result === 'lose') return 'error';
+    return 'default';
+  };
+
+  const getGameResultText = (result) => {
+    if (result === 'win') return '🎉 WIN';
+    if (result === 'lose') return '❌ LOSE';
+    return '🤝 DRAW';
+  };
+
+  const proof = getProofInfo();
 
   return (
-    <div className={`bg-white rounded-lg border-2 p-4 transition-all hover:shadow-md ${
-      isWin ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
-    }`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{getGameIcon(game.gameType)}</span>
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              {game.gameType.charAt(0) + game.gameType.slice(1).toLowerCase()}
-            </h3>
-            <p className="text-xs text-gray-500">
-              {formatDate(game.createdAt)}
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {isWin ? (
-            <div className="flex items-center gap-1 text-green-600">
-              <TrendingUp size={16} />
-              <CheckCircle size={16} />
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 text-red-600">
-              <TrendingDown size={16} />
-              <XCircle size={16} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Game Result */}
-      <div className="mb-3 p-3 bg-white rounded border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Result</p>
-            {getGameResultDisplay(game.gameType, game.resultData)}
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-600 mb-1">Multiplier</p>
-            <span className={`font-bold ${
-              game.multiplier > 1 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {game.multiplier.toFixed(2)}x
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bet Details */}
-      <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
-        <div>
-          <p className="text-gray-600">Bet Amount</p>
-          <p className="font-semibold">{formatAmount(game.betAmount)} ETH</p>
-        </div>
-        <div>
-          <p className="text-gray-600">Payout</p>
-          <p className="font-semibold">{formatAmount(game.payoutAmount)} ETH</p>
-        </div>
-        <div>
-          <p className="text-gray-600">Profit/Loss</p>
-          <p className={`font-semibold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {profitLoss >= 0 ? '+' : ''}{formatAmount(game.profitLoss)} ETH
-          </p>
-        </div>
-      </div>
-
-      {/* VRF Details */}
-      {showVrfDetails && game.vrfDetails && (
-        <div className="border-t pt-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Hash size={16} className="text-blue-600" />
-            <span className="text-sm font-medium text-gray-700">
-              Chainlink VRF Verification
-            </span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-              Verifiable
-            </span>
-          </div>
+    <Card 
+      sx={{ 
+        mb: 2, 
+        background: 'linear-gradient(135deg, rgba(139, 35, 152, 0.1) 0%, rgba(49, 196, 190, 0.1) 100%)',
+        border: '1px solid rgba(139, 35, 152, 0.3)',
+        borderRadius: '12px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: '0 8px 25px rgba(139, 35, 152, 0.3)',
+        }
+      }}
+    >
+      <CardContent>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box>
+            <Typography variant="h6" sx={{ 
+              color: 'white',
+              fontWeight: 'bold',
+              mb: 1
+            }}>
+              {gameType} Game
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+              {formatTimestamp(game.timestamp)}
+            </Typography>
+          </Box>
           
-          <div className="space-y-2 text-sm">
-            {/* Transaction Hash */}
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Transaction:</span>
-              <div className="flex items-center gap-2">
-                <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                  {game.vrfDetails.transactionHash?.slice(0, 10)}...{game.vrfDetails.transactionHash?.slice(-8)}
-                </code>
-                <a
-                  href={game.vrfDetails.etherscanUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 transition-colors"
-                  title="View on Etherscan"
-                >
-                  <ExternalLink size={14} />
-                </a>
-              </div>
-            </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Chip 
+              label={getGameResultText(game.result)}
+              color={getGameResultColor(game.result)}
+              variant="outlined"
+              sx={{ 
+                fontWeight: 'bold',
+                borderWidth: '2px'
+              }}
+            />
+            
+            <Button
+              onClick={() => setExpanded(!expanded)}
+              sx={{ 
+                color: 'white',
+                minWidth: 'auto',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              {expanded ? <ExpandLess size={20} /> : <ExpandMore size={20} />}
+            </Button>
+          </Box>
+        </Box>
 
-            {/* Block Number */}
-            {game.vrfDetails.blockNumber && (
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Block:</span>
-                <span className="font-mono text-xs">
-                  #{game.vrfDetails.blockNumber}
-                </span>
-              </div>
-            )}
+        {/* Game Details */}
+        <Box sx={{ mb: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Bet Amount:
+              </Typography>
+              <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                {game.betAmount} ETH
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Payout:
+              </Typography>
+              <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                {game.payout || '0'} ETH
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
 
-            {/* VRF Value */}
-            {game.vrfDetails.vrfValue && (
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">VRF Value:</span>
-                <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                  {game.vrfDetails.vrfValue.toString().slice(0, 12)}...
-                </code>
-              </div>
-            )}
+        {/* VRF Proof Information */}
+        {proof && (
+          <Box sx={{ 
+            mb: 2, 
+            p: 2, 
+            bgcolor: 'rgba(49, 196, 190, 0.1)', 
+            borderRadius: '8px',
+            border: '1px solid rgba(49, 196, 190, 0.3)'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <CheckCircle size={16} color="#31C4BE" />
+              <Typography variant="subtitle2" sx={{ 
+                color: '#31C4BE', 
+                fontWeight: 'bold' 
+              }}>
+                🔐 VRF Proof Verification
+              </Typography>
+            </Box>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Request ID:
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  color: 'white', 
+                  fontFamily: 'monospace',
+                  fontSize: '0.8rem'
+                }}>
+                  {proof.requestId.slice(0, 8)}...{proof.requestId.slice(-8)}
+                </Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Log Index:
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  #{proof.logIndex}
+                </Typography>
+              </Grid>
+            </Grid>
+            
+            <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => copyToClipboard(proof.requestId)}
+                startIcon={<Copy size={14} />}
+                sx={{ 
+                  color: '#31C4BE',
+                  borderColor: '#31C4BE',
+                  '&:hover': {
+                    borderColor: '#2BA8A3',
+                    backgroundColor: 'rgba(49, 196, 190, 0.1)'
+                  }
+                }}
+              >
+                Copy Request ID
+              </Button>
+              
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => openTransaction(proof.transactionHash, proof.logIndex)}
+                startIcon={<ExternalLink size={14} />}
+                sx={{ 
+                  backgroundColor: '#31C4BE',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#2BA8A3'
+                  }
+                }}
+              >
+                View on Etherscan
+              </Button>
+            </Box>
+          </Box>
+        )}
 
-            {/* Fulfillment Time */}
-            {game.vrfDetails.fulfilledAt && (
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Fulfilled:</span>
-                <div className="flex items-center gap-1 text-xs">
-                  <Clock size={12} />
-                  {formatDate(game.vrfDetails.fulfilledAt)}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Verification Note */}
-          <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
-            <p className="font-medium mb-1">🔒 Provably Fair</p>
-            <p>
-              This result was generated using Chainlink VRF (Verifiable Random Function). 
-              Click the transaction hash to verify the randomness on-chain.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Game ID for debugging */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-2 pt-2 border-t text-xs text-gray-400">
-          Game ID: {game.id}
-        </div>
-      )}
-    </div>
+        {/* Expanded Content */}
+        <Collapse in={expanded}>
+          <Divider sx={{ my: 2, borderColor: 'rgba(139, 35, 152, 0.3)' }} />
+          
+          <Box>
+            <Typography variant="h6" sx={{ 
+              color: '#8B2398', 
+              mb: 2,
+              fontWeight: 'bold'
+            }}>
+              Game Details
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Game ID:
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace' }}>
+                  {game.id || 'N/A'}
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Player Address:
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace' }}>
+                  {game.playerAddress ? 
+                    `${game.playerAddress.slice(0, 8)}...${game.playerAddress.slice(-6)}` : 
+                    'N/A'
+                  }
+                </Typography>
+              </Grid>
+              
+              {game.gameData && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                    Game Data:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace' }}>
+                    {JSON.stringify(game.gameData, null, 2)}
+                  </Typography>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        </Collapse>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -87,6 +87,32 @@ export default function GameHistory({ history }) {
                     <span className="text-white text-sm">{game.payout}</span>
                   </div>
                 </td>
+                <td className="py-3 px-4">
+                  {game.vrfProof ? (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-green-400 font-mono">
+                          {game.vrfProof.requestId ? 
+                            `${game.vrfProof.requestId.slice(0, 6)}...${game.vrfProof.requestId.slice(-4)}` : 
+                            'N/A'
+                          }
+                        </span>
+                        <button
+                          onClick={() => openEtherscan(game.vrfProof.transactionHash)}
+                          className="text-blue-400 hover:text-blue-300 text-xs underline"
+                          title="View on Etherscan"
+                        >
+                          TX
+                        </button>
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        Log: #{game.vrfProof.logIndex || 0}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-500 text-xs">No proof</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

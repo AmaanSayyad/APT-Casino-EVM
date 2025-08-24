@@ -1,6 +1,7 @@
+"use client";
 import React from 'react';
 import { useAccount } from 'wagmi';
-import GameHistoryList from '../components/GameHistory/GameHistoryList';
+import GameHistoryList from '@/components/GameHistory/GameHistoryList';
 
 /**
  * Game History Page
