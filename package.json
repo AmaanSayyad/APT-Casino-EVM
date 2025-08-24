@@ -12,7 +12,14 @@
     "lint": "next lint",
     "fund-treasury": "node scripts/fund-treasury.js",
     "deploy:move": "node move-contracts/scripts/deploy.js --network=testnet",
-    "deploy:plinko": "node move-contracts/scripts/deploy.js --network=testnet --dir=move-contracts/plinko-only"
+    "deploy:plinko": "node move-contracts/scripts/deploy.js --network=testnet --dir=move-contracts/plinko-only",
+    "setup:vrf-subscription": "npx hardhat run scripts/setup-vrf-subscription.js --network sepolia",
+    "deploy:vrf": "npx hardhat run scripts/deploy-vrf.js --network sepolia",
+    "add:vrf-consumer": "npx hardhat run scripts/add-vrf-consumer.js --network sepolia",
+    "verify:vrf": "npx hardhat verify --network sepolia",
+    "db:migrate": "node scripts/run-migrations.js migrate",
+    "db:status": "node scripts/run-migrations.js status",
+    "db:rollback": "node scripts/run-migrations.js rollback"
   },
   "dependencies": {
     "@babel/runtime": "^7.24.0",
@@ -41,11 +48,13 @@
     "ethers": "^6.15.0",
     "framer-motion": "^12.10.1",
     "got": "^11.8.6",
+    "ioredis": "^5.3.2",
     "lottie-react": "^2.4.0",
     "lucide-react": "^0.469.0",
     "matter-js": "^0.19.0",
     "next": "^15.3.3",
     "next-themes": "^0.3.0",
+    "pg": "^8.11.0",
     "pino-pretty": "^13.1.1",
     "react": "18.3.1",
     "react-confetti": "^6.4.0",
@@ -64,7 +73,11 @@
     "wagmi": "^2.16.4"
   },
   "devDependencies": {
+    "@chainlink/contracts": "^0.8.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@types/node": "22.15.15",
+    "@types/pg": "^8.10.0",
+    "hardhat": "^2.26.3",
     "tailwind-scrollbar": "^3.0.4",
     "typescript": "5.8.3"
   }

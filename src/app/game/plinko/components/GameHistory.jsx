@@ -3,6 +3,19 @@ import { useState } from "react";
 
 export default function GameHistory({ history }) {
   const [visibleCount, setVisibleCount] = useState(5);
+  
+  // Format transaction hash for display
+  const formatTxHash = (hash) => {
+    if (!hash) return 'N/A';
+    return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+  };
+  
+  // Open Etherscan link
+  const openEtherscan = (hash) => {
+    if (hash) {
+      window.open(`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER}/tx/${hash}`, '_blank');
+    }
+  };
 
   return (
     <div>
@@ -39,6 +52,9 @@ export default function GameHistory({ history }) {
               </th>
               <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">
                 Payout
+              </th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">
+                VRF Proof
               </th>
             </tr>
           </thead>

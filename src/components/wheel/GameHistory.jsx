@@ -9,6 +9,19 @@ const GameHistory = ({ gameHistory }) => {
   const [activeTab, setActiveTab] = useState("my-bet");
   const [entriesShown, setEntriesShown] = useState(10);
   
+  // Format transaction hash for display
+  const formatTxHash = (hash) => {
+    if (!hash) return 'N/A';
+    return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+  };
+  
+  // Open Etherscan link
+  const openEtherscan = (hash) => {
+    if (hash) {
+      window.open(`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER}/tx/${hash}`, '_blank');
+    }
+  };
+  
   return (
     <div className="bg-[#070005] w-full rounded-xl overflow-hidden mt-0">
       <div className="flex flex-row justify-between items-center">
@@ -65,6 +78,8 @@ const GameHistory = ({ gameHistory }) => {
                 <th className="py-6 px-4 font-medium">Bet amount</th>
                 <th className="py-6 px-4 font-medium">Multiplier</th>
                 <th className="py-6 px-4 font-medium">Payout</th>
+                <th className="py-6 px-4 font-medium">VRF Proof</th>
+                <th className="py-6 px-4 font-medium">Block</th>
               </tr>
             </thead>
             <tbody>
@@ -101,11 +116,44 @@ const GameHistory = ({ gameHistory }) => {
                         />  
                       </span>
                     </td>
+                    <td className="py-6 px-4">
+                      {item.vrfDetails?.transactionHash ? (
+                        <div className="flex flex-col space-y-1">
+                          <button
+                            onClick={() => openEtherscan(item.vrfDetails.transactionHash)}
+                            className="flex items-center space-x-2 text-purple-400 hover:text-purple-300 transition-colors"
+                            title="Click to verify on Etherscan"
+                          >
+                            <span className="text-xs font-mono">
+                              {formatTxHash(item.vrfDetails.transactionHash)}
+                            </span>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </button>
+                          <div className="flex items-center space-x-1">
+                            <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                            <span className="text-xs text-green-400">Verified</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-xs">No VRF</span>
+                      )}
+                    </td>
+                    <td className="py-6 px-4">
+                      {item.vrfDetails?.blockNumber ? (
+                        <span className="text-xs font-mono text-gray-300">
+                          #{item.vrfDetails.blockNumber}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-xs">-</span>
+                      )}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-400">
+                  <td colSpan={7} className="py-8 text-center text-gray-400">
                     No game history yet. Place your first bet!
                   </td>
                 </tr>

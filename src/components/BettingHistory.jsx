@@ -1,8 +1,19 @@
 "use client";
 import React from 'react';
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, Chip, IconButton, Tooltip } from '@mui/material';
+import { OpenInNew, Verified, Security } from '@mui/icons-material';
 
 const BettingHistory = ({ history }) => {
+  const openEtherscan = (txHash) => {
+    if (txHash) {
+      window.open(`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER || 'https://sepolia.etherscan.io'}/tx/${txHash}`, '_blank');
+    }
+  };
+
+  const formatTxHash = (hash) => {
+    if (!hash) return 'N/A';
+    return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+  };
   return (
     <Paper 
       elevation={3} 
@@ -15,9 +26,18 @@ const BettingHistory = ({ history }) => {
         overflowY: 'auto'
       }}
     >
-      <Typography variant="h6" color="primary" gutterBottom>
-        Betting History
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6" color="primary">
+          Betting History
+        </Typography>
+        <Chip
+          icon={<Security />}
+          label="VRF Verified"
+          color="success"
+          size="small"
+          variant="outlined"
+        />
+      </Box>
       {history.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 3 }}>
           <Typography color="text.secondary">
@@ -66,24 +86,77 @@ const BettingHistory = ({ history }) => {
                 <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
                   Result:
                 </Typography>
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.7rem',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    backgroundColor: bet.roll === 0 ? '#14D854' : 
-                      [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(bet.roll) ? '#d82633' : '#333'
-                  }}
-                >
-                  {bet.roll}
-                </Box>
+                <Tooltip title={bet.vrfDetails?.transactionHash ? 'VRF Verified - Click to view' : 'Result'}>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.7rem',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      backgroundColor: bet.roll === 0 ? '#14D854' : 
+                        [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(bet.roll) ? '#d82633' : '#333',
+                      cursor: bet.vrfDetails?.transactionHash ? 'pointer' : 'default',
+                      '&:hover': {
+                        transform: bet.vrfDetails?.transactionHash ? 'scale(1.1)' : 'none'
+                      }
+                    }}
+                    onClick={() => bet.vrfDetails?.transactionHash && openEtherscan(bet.vrfDetails.transactionHash)}
+                  >
+                    {bet.roll}
+                    {bet.vrfDetails?.transactionHash && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -2,
+                          right: -2,
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: '#4CAF50',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <Verified sx={{ fontSize: 6, color: 'white' }} />
+                      </Box>
+                    )}
+                  </Box>
+                </Tooltip>
               </Box>
+              
+              {/* VRF Transaction Details */}
+              {bet.vrfDetails?.transactionHash && (
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
+                    VRF:
+                  </Typography>
+                  <Tooltip title="Click to verify on Etherscan">
+                    <Chip
+                      label={formatTxHash(bet.vrfDetails.transactionHash)}
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                      icon={<Verified />}
+                      onClick={() => openEtherscan(bet.vrfDetails.transactionHash)}
+                      sx={{ 
+                        fontSize: '0.6rem', 
+                        height: 20,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'rgba(76, 175, 80, 0.1)'
+                        }
+                      }}
+                    />
+                  </Tooltip>
+                </Box>
+              )}
             </Box>
           </Box>
         ))

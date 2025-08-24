@@ -184,4 +184,120 @@ logs/
 .env.testnet
 .env.devnet
 
-docs
+# Hardhat specific files
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Hardhat cache and artifacts
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Deployment files (sensitive data)
+deployments/*.json
+!deployments/README.md
+
+# Database migrations (if contains sensitive data)
+database/migrations/*.sql
+!database/migrations/README.md
+
+# Scripts that might contain sensitive data
+scripts/*.env
+scripts/.env*
+
+# VRF specific files
+vrf-*.json
+subscription-*.json
+
+# Treasury and financial data
+treasury-*.json
+balance-*.json
+
+# Test files that might contain sensitive data
+test-*.js
+!test-*.test.js
+
+# Backup files
+*.bak
+*.backup
+*.bak2
+*.bak3
+*.bak4
+*.bak5
+
+# Patch files
+*.diff
+*.patch
+
+# Vercel specific
+.vercel
+
+# Local development files
+.env.local
+.env.development
+.env.production
+
+# Log files
+*.log
+logs/
+debug/
+
+# Temporary directories
+cache/
+temp/
+tmp/
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Node modules
+node_modules/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Environment files
+.env*
+
+# Hardhat artifacts
+artifacts/
+cache/
+typechain/
+
+# Deployment files
+deployments/*.json
+!deployments/README.md
+
+# Database files
+*.db
+*.sqlite
+
+# Backup files
+*.bak*
+*.backup*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Documentation and development files
+docs/
+.kiro/
+
+# Lock files (uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
