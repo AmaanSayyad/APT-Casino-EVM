@@ -1279,12 +1279,8 @@ export default function Navbar() {
       
       {/* VRF Modal - Moved outside nav for proper positioning */}
       <VRFPregenerationModal
-        isOpen={showModal}
+        open={showModal}
         onClose={handleVRFModalClose}
-        userAddress={address}
-        vrfStatus={vrfStatus}
-        onGenerateVRF={handleGenerateVRF}
-        isGenerating={isGenerating}
       />
     </>
   );

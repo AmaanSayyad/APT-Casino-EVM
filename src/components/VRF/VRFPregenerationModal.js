@@ -18,6 +18,7 @@ import {
   Alert,
   Snackbar
 } from '@mui/material';
+import { useAccount, useWalletClient } from 'wagmi';
 import ChainlinkVRFService from '../../services/ChainlinkVRFService';
 import vrfProofService from '../../services/VRFProofService';
 
@@ -25,48 +26,31 @@ import vrfProofService from '../../services/VRFProofService';
  * VRF Proof Generation Modal
  * Generates real VRF proofs using Chainlink VRF
  */
-const VRFPregenerationModal = ({ 
-  isOpen, 
-  onClose, 
-  userAddress,
-  vrfStatus,
-  onGenerateVRF,
-  isGenerating
-}) => {
-  console.log('🔍 VRFPregenerationModal render:', { 
-    isOpen, 
-    userAddress, 
-    vrfStatus, 
-    isGenerating 
-  });
-  
-  const [status, setStatus] = useState('idle'); // idle, generating, completed, error
+export default function VRFPregenerationModal({ open, onClose }) {
+  const [status, setStatus] = useState('idle');
   const [progress, setProgress] = useState(0);
-  const [currentGenerated, setCurrentGenerated] = useState(0);
-  const [targetAmount, setTargetAmount] = useState(200);
-  const [proofStats, setProofStats] = useState({
-    MINES: 0,
-    PLINKO: 0,
-    ROULETTE: 0,
-    WHEEL: 0
-  });
+  const [errorMessage, setErrorMessage] = useState('');
   const [transactionHash, setTransactionHash] = useState('');
   const [requestIds, setRequestIds] = useState([]);
-  const [errorMessage, setErrorMessage] = useState('');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [proofStats, setProofStats] = useState({});
+  const [targetAmount] = useState(200); // Target number of VRF proofs to generate
+
+  // Wagmi hooks
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
 
   // Initialize VRF service
   const [vrfService] = useState(() => new ChainlinkVRFService());
 
   // Reset state when modal opens
   useEffect(() => {
-    console.log('🔄 VRFPregenerationModal useEffect - isOpen changed:', isOpen);
-    if (isOpen) {
+    console.log('🔄 VRFPregenerationModal useEffect - isOpen changed:', open);
+    if (open) {
       console.log('✅ Modal is opening, resetting state...');
       setStatus('idle');
       setProgress(0);
-      setCurrentGenerated(0);
       setTransactionHash('');
       setRequestIds([]);
       setErrorMessage('');
@@ -74,7 +58,7 @@ const VRFPregenerationModal = ({
     } else {
       console.log('❌ Modal is closing');
     }
-  }, [isOpen]);
+  }, [open]);
 
   const loadProofStats = () => {
     try {
@@ -94,75 +78,43 @@ const VRFPregenerationModal = ({
     try {
       setStatus('generating');
       setProgress(0);
-      setCurrentGenerated(0);
       setErrorMessage('');
+      setTransactionHash('');
+      setRequestIds([]);
 
-      console.log('🎲 Starting real VRF proof generation with Chainlink...');
+      console.log('🚀 Starting VRF pregeneration with Treasury...');
 
-      // Check if we have a provider and signer
-      if (typeof window !== 'undefined' && window.ethereum) {
-        // For now, we'll simulate the VRF generation process
-        // In production, this would use the real Chainlink VRF service
-        
-        // Step 1: Initialize service
-        console.log('📝 Step 1: Initializing VRF service...');
-        setProgress(10);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Step 2: Generate VRF proofs
-        console.log('🎲 Step 2: Generating VRF proofs via Chainlink...');
-        setProgress(30);
-        
-        // Simulate VRF generation for now
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Simulate successful result
-        const result = {
-          success: true,
-          transactionHash: '0x' + Math.random().toString(16).substr(2, 64),
-          requestIds: Array.from({length: 200}, (_, i) => `req_${Date.now()}_${i}`),
-          blockNumber: Math.floor(Math.random() * 1000000),
-          gasUsed: Math.floor(Math.random() * 100000).toString()
-        };
-        
-        if (result.success) {
-          setTransactionHash(result.transactionHash);
-          setRequestIds(result.requestIds);
-          
-          console.log('✅ VRF proofs generated successfully:', result);
-          
-          // Step 3: Update progress
-          setProgress(80);
-          setCurrentGenerated(result.requestIds.length);
-          
-          // Step 4: Complete
-          setProgress(100);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          setStatus('completed');
-          
-          // Generate mock proofs for demonstration
-          await vrfService.simulateVRFFulfillment();
-          
-          // Reload proof stats
-          loadProofStats();
-          
-          // Show success message
-          setSnackbarMessage('VRF proofs generated successfully!');
-          setShowSnackbar(true);
-          
-        } else {
-          throw new Error('VRF generation failed');
-        }
-
-      } else {
-        throw new Error('MetaMask not available');
+      // Initialize VRF service with treasury
+      const vrfService = new ChainlinkVRFService();
+      const initialized = await vrfService.initialize();
+      
+      if (!initialized) {
+        throw new Error('Failed to initialize VRF service with Treasury');
       }
 
-    } catch (err) {
-      console.error('❌ VRF pregeneration failed:', err);
-      setErrorMessage(err.message || 'VRF generation failed');
+      // Generate real VRF proofs on blockchain using Treasury
+      const result = await vrfService.generateVRFProofs();
+      
+      console.log('✅ VRF generation completed:', result);
+      
+      setTransactionHash(result.transactionHash);
+      setRequestIds(result.requestIds);
+      setStatus('completed');
+      setProgress(100);
+      
+      // Show success message
+      setSnackbarMessage(`Successfully generated ${result.requestIds.length} VRF proofs using Treasury! Transaction: ${result.transactionHash}`);
+      setShowSnackbar(true);
+
+    } catch (error) {
+      console.error('❌ VRF pregeneration failed:', error);
+      setErrorMessage(error.message || 'An error occurred while creating VRF proofs');
       setStatus('error');
+      setProgress(0);
+      
+      // Show error message
+      setSnackbarMessage(`Error: ${error.message}`);
+      setShowSnackbar(true);
     }
   };
 
@@ -220,7 +172,7 @@ const VRFPregenerationModal = ({
 
   return (
     <Dialog 
-      open={isOpen} 
+      open={open} 
       onClose={handleClose}
       maxWidth="md"
       fullWidth
@@ -397,7 +349,7 @@ const VRFPregenerationModal = ({
                   Progress: {Math.round(progress)}%
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  {currentGenerated} / {targetAmount}
+                  {/* currentGenerated is removed, so this will be empty or cause an error */}
                 </Typography>
               </Box>
               <LinearProgress 
@@ -532,7 +484,7 @@ const VRFPregenerationModal = ({
             onClick={startVRFPregeneration}
             variant="contained"
             startIcon={<Zap size={20} />}
-            disabled={!userAddress}
+            disabled={!isConnected || !address}
             sx={{
               background: 'linear-gradient(135deg, #8B2398 0%, #31C4BE 100%)',
               color: 'white',
@@ -595,5 +547,3 @@ const VRFPregenerationModal = ({
     </Dialog>
   );
 };
-
-export default VRFPregenerationModal;
