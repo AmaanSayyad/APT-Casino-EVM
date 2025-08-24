@@ -72,7 +72,14 @@ export const useVRFPregeneration = () => {
    * Generate VRF batch (200 VRFs - 50 per game)
    */
   const generateVRFBatch = useCallback(async (userAddress) => {
-    if (!userAddress) return;
+    if (!userAddress) {
+      throw new Error('User address required');
+    }
+
+    if (vrfStatus.isGenerating) {
+      console.log('🔄 VRF generation already in progress...');
+      return;
+    }
 
     try {
       setVrfStatus(prev => ({ 
@@ -121,7 +128,7 @@ export const useVRFPregeneration = () => {
       }));
       throw error;
     }
-  }, []);
+  }, [vrfStatus.isGenerating, pollForCompletion]);
 
   /**
    * Poll for VRF generation completion

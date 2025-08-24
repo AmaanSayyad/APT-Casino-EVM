@@ -85,10 +85,19 @@ export default function Providers({ children }) {
   const config = createConfig({
     chains: [sepolia],
     connectors: [
-      metaMask(),
-      injected(),
+      metaMask({
+        shimDisconnect: true,
+        UNSTABLE_shimOnConnectSelectAccount: true,
+      }),
+      injected({
+        shimDisconnect: true,
+        UNSTABLE_shimOnConnectSelectAccount: true,
+      }),
     ],
-    ssr: true,
+    ssr: false, // SSR'ı false yaparak client-side'da daha stabil
+    transports: {
+      [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC || 'https://ethereum-sepolia.publicnode.com'),
+    },
   });
 
   return (

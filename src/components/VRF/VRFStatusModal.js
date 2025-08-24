@@ -6,16 +6,15 @@ import { CheckCircle, Clock, ExternalLink, AlertCircle, RefreshCw, X } from 'luc
  * Shows current VRF status and allows manual generation/update
  */
 const VRFStatusModal = ({ 
-  isOpen, 
+  open, 
   onClose, 
-  userAddress,
   vrfStatus,
-  onGenerateVRF,
+  onGenerate,
   isGenerating
 }) => {
-  console.log('🔍 VRF Modal render:', { isOpen, userAddress, vrfStatus });
+  console.log('🔍 VRF Modal render:', { open, vrfStatus });
   
-  if (!isOpen) return null;
+  if (!open) return null;
 
   // Calculate game allocation from VRF status
   const gameAllocation = {
@@ -75,8 +74,8 @@ const VRFStatusModal = ({
   };
 
   const handleGenerateVRF = () => {
-    if (onGenerateVRF && !isGenerating) {
-      onGenerateVRF();
+    if (onGenerate && !isGenerating) {
+      onGenerate();
     }
   };
 

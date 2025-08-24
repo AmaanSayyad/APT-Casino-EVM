@@ -20,6 +20,7 @@ const AppLayout = ({ children }) => {
     generateVRFBatch,
     canPlayGame
   } = useVRFPregeneration();
+  
   return (
     <WalletConnectionHandler>
       <div className="min-h-screen bg-gray-50">
@@ -27,92 +28,43 @@ const AppLayout = ({ children }) => {
         <nav className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🎰</span>
-                  <span className="text-xl font-bold text-gray-900">
-                    Casino VRF
-                  </span>
-                </div>
-                <div className="hidden md:flex items-center space-x-6">
-                  <a href="/" className="text-gray-700 hover:text-gray-900 transition-colors">
-                    🎰 Roulette
-                  </a>
-                  <a href="/mines" className="text-gray-700 hover:text-gray-900 transition-colors">
-                    💣 Mines
-                  </a>
-                  <a href="/plinko" className="text-gray-700 hover:text-gray-900 transition-colors">
-                    🏀 Plinko
-                  </a>
-                  <a href="/wheel" className="text-gray-700 hover:text-gray-900 transition-colors">
-                    🎡 Wheel
-                  </a>
-                  <a href="/history" className="text-gray-700 hover:text-gray-900 transition-colors">
-                    📊 History
-                  </a>
-                </div>
+              <div className="flex items-center">
+                <h1 className="text-xl font-semibold text-gray-900">APT Casino</h1>
               </div>
-              
-              {/* VRF Status & Wallet */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center space-x-4">
                 {/* VRF Status Button */}
-                {isConnected && (
-                  <button
-                    onClick={() => {
-                      console.log('🎲 VRF button clicked, opening modal...');
-                      openModal();
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      totalVRF > 0 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                        : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                    }`}
-                  >
-                    <span className="text-base">🎲</span>
-                    <span className="hidden sm:inline">
-                      VRF PROOFS: {totalVRF}
+                <button
+                  onClick={openModal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  VRF Status
+                </button>
+                {/* Wallet Connection */}
+                <div className="text-sm text-gray-600">
+                  {isConnected ? (
+                    <span className="text-green-600">
+                      ✅ {address?.slice(0, 6)}...{address?.slice(-4)}
                     </span>
-                    {isGenerating && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    )}
-                  </button>
-                )}
-                
-                {/* Wallet Connection Button */}
-                <w3m-button />
+                  ) : (
+                    <span className="text-red-600">❌ Not Connected</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </nav>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 py-8">
+        <main className="flex-1">
           {children}
         </main>
 
-        {/* Footer */}
-        <footer className="bg-white border-t mt-16">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="text-center text-gray-600">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-lg">🔒</span>
-                <span className="font-medium">Provably Fair Gaming</span>
-              </div>
-              <p className="text-sm">
-                All games use Chainlink VRF for verifiable randomness on Ethereum Sepolia
-              </p>
-            </div>
-          </div>
-        </footer>
-
         {/* VRF Status Modal */}
-        {console.log('🔍 AppLayout render - showModal:', showModal)}
         <VRFStatusModal
-          isOpen={showModal}
+          open={showModal}
           onClose={closeModal}
-          userAddress={address}
           vrfStatus={vrfStatus}
-          onGenerateVRF={generateVRFBatch}
+          onGenerate={generateVRFBatch}
           isGenerating={isGenerating}
         />
       </div>
