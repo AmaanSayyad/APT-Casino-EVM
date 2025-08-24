@@ -6,6 +6,7 @@ import { store } from '@/store';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletStatusProvider } from '@/hooks/useWalletStatus';
 import { NotificationProvider } from '@/components/NotificationSystem';
+import WalletConnectionGuard from '@/components/WalletConnectionGuard';
 import { ThemeProvider } from 'next-themes';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
@@ -85,10 +86,20 @@ export default function Providers({ children }) {
   const config = createConfig({
     chains: [sepolia],
     connectors: [
-      metaMask(),
+      metaMask({
+        dappMetadata: {
+          name: 'APT Casino',
+          url: typeof window !== 'undefined' ? window.location.origin : '',
+        },
+      }),
       injected(),
     ],
     ssr: true,
+    storage: typeof window !== 'undefined' ? {
+      getItem: (key) => localStorage.getItem(key),
+      setItem: (key, value) => localStorage.setItem(key, value),
+      removeItem: (key) => localStorage.removeItem(key),
+    } : undefined,
   });
 
   return (
@@ -97,12 +108,14 @@ export default function Providers({ children }) {
         <QueryClientProvider client={queryClient}>
           <NotificationProvider>
             <WalletStatusProvider>
-              <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-                <MuiThemeProvider theme={muiTheme}>
-                  <CssBaseline />
-                  {children}
-                </MuiThemeProvider>
-              </ThemeProvider>
+              <WalletConnectionGuard>
+                <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+                  <MuiThemeProvider theme={muiTheme}>
+                    <CssBaseline />
+                    {children}
+                  </MuiThemeProvider>
+                </ThemeProvider>
+              </WalletConnectionGuard>
             </WalletStatusProvider>
           </NotificationProvider>
         </QueryClientProvider>

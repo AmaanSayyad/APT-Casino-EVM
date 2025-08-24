@@ -12,6 +12,7 @@ import EthereumConnectWalletButton from "./EthereumConnectWalletButton";
 import WithdrawModal from "./WithdrawModal";
 import VRFPregenerationModal from "./VRF/VRFPregenerationModal";
 import { useVRFPregeneration } from '../hooks/useVRFPregeneration';
+import { useWalletPersistence } from '../hooks/useWalletPersistence';
 
 
 import { useNotification } from './NotificationSystem';
@@ -143,11 +144,14 @@ export default function Navbar() {
   // VRF Pregeneration
   const { vrfStatus, generateVRFBatch, isGenerating, showModal, openModal, closeModal } = useVRFPregeneration();
 
-  // Wallet connection
+  // Wallet connection with persistence
   const { isConnected, address } = useAccount();
   const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
   const isWalletReady = isConnected && address;
+  
+  // Use wallet persistence hook
+  useWalletPersistence();
 
   // Debug wallet connection
   useEffect(() => {
