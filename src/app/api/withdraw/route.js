@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 
-// Treasury private key from environment
-const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "0xa0c83522c748fcd4086854f3635b2b9a762d8107b9f0b478a7d8515f5897abec";
+// Treasury private key from environment - required
+const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY;
+if (!TREASURY_PRIVATE_KEY) {
+  throw new Error('TREASURY_PRIVATE_KEY environment variable is required');
+}
 
 // Sepolia RPC URL
 const SEPOLIA_RPC = process.env.NEXT_PUBLIC_SEPOLIA_RPC || 'https://rpc.sepolia.org';

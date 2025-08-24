@@ -9,7 +9,10 @@ async function initTreasury() {
   try {
     console.log('🏦 Initializing Treasury Wallet...');
     
-    const TREASURY_PRIVATE_KEY = "0x0e5070144da800e1528a09e39ee0f589a4feafb880968de6f0d5479f7258bd82";
+    const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY;
+    if (!TREASURY_PRIVATE_KEY) {
+      throw new Error('TREASURY_PRIVATE_KEY environment variable is required');
+    }
     
     // Create treasury account from private key
     const treasuryAccount = new AptosAccount(

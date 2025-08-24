@@ -12,8 +12,11 @@ async function fundTreasury() {
   try {
     console.log('🏦 Funding Treasury Wallet...');
     
-    // Treasury private key - 9 APT'li adres
-    const TREASURY_PRIVATE_KEY = "0x0e5070144da800e1528a09e39ee0f589a4feafb880968de6f0d5479f7258bd82";
+    // Treasury private key from environment variable
+    const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY;
+    if (!TREASURY_PRIVATE_KEY) {
+      throw new Error('TREASURY_PRIVATE_KEY environment variable is required');
+    }
     
     console.log('🔑 Private key found:', TREASURY_PRIVATE_KEY.slice(0, 10) + '...');
     
