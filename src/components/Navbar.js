@@ -171,23 +171,10 @@ export default function Navbar() {
           walletClient: !!walletClient,
           isWalletReady 
         });
-      }, 3000); // Increased delay for better stability
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [isConnected, address, chainId, walletClient, isWalletReady]);
-
-  // Persist wallet connection state
-  useEffect(() => {
-    if (isConnected && address) {
-      localStorage.setItem('wagmi.connected', 'true');
-      localStorage.setItem('wagmi.address', address);
-      console.log('✅ Wallet connection state persisted');
-    } else if (!isConnected) {
-      localStorage.removeItem('wagmi.connected');
-      localStorage.removeItem('wagmi.address');
-      console.log('❌ Wallet connection state cleared');
-    }
-  }, [isConnected, address]);
 
   // Mock notifications for UI purposes
   const [notifications, setNotifications] = useState([

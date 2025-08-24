@@ -1,17 +1,11 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { useAccount, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
+import React, { useEffect } from 'react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 
 export default function EthereumConnectWalletButton() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const { chain } = useNetwork();
-  const { switchNetwork } = useSwitchNetwork();
-  
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionError, setConnectionError] = useState(null);
 
   // Auto-reconnect on page load if previously connected
   useEffect(() => {
@@ -19,9 +13,7 @@ export default function EthereumConnectWalletButton() {
       try {
         // Check if wallet was previously connected
         const wasConnected = localStorage.getItem('wagmi.connected');
-        const savedAddress = localStorage.getItem('wagmi.address');
-        
-        if (wasConnected === 'true' && savedAddress && !isConnected) {
+        if (wasConnected === 'true' && !isConnected) {
           console.log('🔄 Attempting auto-reconnect...');
           
           // Try to find MetaMask connector first
@@ -41,22 +33,15 @@ export default function EthereumConnectWalletButton() {
         console.log('❌ Auto-reconnect failed:', error);
         // Clear the connection flag if auto-reconnect fails
         localStorage.removeItem('wagmi.connected');
-        localStorage.removeItem('wagmi.address');
       }
     };
 
     // Small delay to ensure connectors are ready
-    const timer = setTimeout(autoConnect, 1500);
+    const timer = setTimeout(autoConnect, 1000);
     return () => clearTimeout(timer);
   }, [connectors, connect, isConnected]);
 
-  // Auto-switch to Sepolia if on wrong network
-  useEffect(() => {
-    if (isConnected && chain && chain.id !== sepolia.id) {
-      console.log('🔄 Wrong network detected, switching to Sepolia...');
-      switchNetwork?.(sepolia.id);
-    }
-  }, [isConnected, chain, switchNetwork]);
+  // No automatic connection monitoring - user controls connection manually
 
   // MetaMask event listeners for better connection stability
   useEffect(() => {
@@ -98,9 +83,6 @@ export default function EthereumConnectWalletButton() {
 
   const handleConnect = async () => {
     try {
-      setIsConnecting(true);
-      setConnectionError(null);
-      
       // Try to find MetaMask connector first
       let connector = connectors.find(c => c.id === 'metaMask');
       
@@ -119,29 +101,16 @@ export default function EthereumConnectWalletButton() {
         }
         
         await connect({ connector });
-        
-        // Check if we need to switch networks
-        if (chain && chain.id !== sepolia.id) {
-          console.log('🔄 Switching to Sepolia network...');
-          await switchNetwork?.(sepolia.id);
-        }
-        
         // Store connection state
         localStorage.setItem('wagmi.connected', 'true');
         console.log('Wallet connected successfully');
       } else {
         console.error('No wallet connector found');
-        setConnectionError('No wallet connector found. Please make sure MetaMask is installed.');
+        alert('No wallet connector found. Please make sure MetaMask is installed.');
       }
     } catch (error) {
       console.error('Connection error:', error);
-      setConnectionError(`Connection failed: ${error.message}`);
-      
-      // Clear any stale connection state
-      localStorage.removeItem('wagmi.connected');
-      localStorage.removeItem('wagmi.address');
-    } finally {
-      setIsConnecting(false);
+      alert(`Connection failed: ${error.message}`);
     }
   };
 
@@ -149,18 +118,11 @@ export default function EthereumConnectWalletButton() {
     disconnect();
     // Clear connection state
     localStorage.removeItem('wagmi.connected');
-    localStorage.removeItem('wagmi.address');
   };
 
   return (
     <div className="relative">
-      {isConnecting ? (
-        <button
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all transform hover:scale-105"
-        >
-          Connecting...
-        </button>
-      ) : isConnected ? (
+      {isConnected ? (
         <div className="flex items-center gap-3">
           <span className="text-white text-sm">
             {address?.slice(0, 6)}...{address?.slice(-4)}
@@ -179,9 +141,6 @@ export default function EthereumConnectWalletButton() {
         >
           Connect MetaMask
         </button>
-      )}
-      {connectionError && (
-        <p className="text-red-500 text-sm mt-2">{connectionError}</p>
       )}
     </div>
   );

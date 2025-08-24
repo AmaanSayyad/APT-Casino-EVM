@@ -7,8 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { useAccount, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 
 const WalletStatusContext = createContext(null);
 
@@ -24,8 +23,6 @@ export function WalletStatusProvider({ children }) {
   
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const { chain } = useNetwork();
-  const { switchNetwork } = useSwitchNetwork();
 
   const [devWallet, setDevWallet] = useState({
     isConnected: false,
@@ -34,55 +31,6 @@ export function WalletStatusProvider({ children }) {
   });
 
   const [error, setError] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-
-  // Auto-switch to Sepolia if on wrong network
-  useEffect(() => {
-    if (connected && chain && chain.id !== sepolia.id) {
-      console.log('🔄 Wrong network detected, switching to Sepolia...');
-      switchNetwork?.(sepolia.id);
-    }
-  }, [connected, chain, switchNetwork]);
-
-  // Persist connection state
-  useEffect(() => {
-    if (connected && account) {
-      localStorage.setItem('wagmi.connected', 'true');
-      localStorage.setItem('wagmi.address', account);
-      console.log('✅ Wallet connected, state persisted');
-    } else if (!connected) {
-      localStorage.removeItem('wagmi.connected');
-      localStorage.removeItem('wagmi.address');
-      console.log('❌ Wallet disconnected, state cleared');
-    }
-  }, [connected, account]);
-
-  // Auto-reconnect on page load if previously connected
-  useEffect(() => {
-    const wasConnected = localStorage.getItem('wagmi.connected');
-    const savedAddress = localStorage.getItem('wagmi.address');
-    
-    if (wasConnected === 'true' && savedAddress && !connected) {
-      console.log('🔄 Attempting auto-reconnect...');
-      
-      // Small delay to ensure connectors are ready
-      const timer = setTimeout(async () => {
-        try {
-          const metaMaskConnector = connectors.find(connector => connector.id === 'metaMask');
-          if (metaMaskConnector) {
-            await connect({ connector: metaMaskConnector });
-            console.log('✅ Auto-reconnect successful');
-          }
-        } catch (error) {
-          console.log('❌ Auto-reconnect failed:', error);
-          localStorage.removeItem('wagmi.connected');
-          localStorage.removeItem('wagmi.address');
-        }
-      }, 1500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [connectors, connect, connected]);
 
   useEffect(() => {
     if (!isDev) return;
@@ -135,42 +83,18 @@ export function WalletStatusProvider({ children }) {
       return;
     }
 
-    if (isConnecting) {
-      console.log('🔄 Already connecting, please wait...');
-      return;
-    }
-
     try {
-      setIsConnecting(true);
-      setError(null);
-      
       // MetaMask ile bağlan
       const metaMaskConnector = connectors.find(connector => connector.id === 'metaMask');
       if (metaMaskConnector) {
-        console.log('🔌 Connecting to MetaMask...');
         await connect({ connector: metaMaskConnector });
-        
-        // Check if we need to switch networks
-        if (chain && chain.id !== sepolia.id) {
-          console.log('🔄 Switching to Sepolia network...');
-          await switchNetwork?.(sepolia.id);
-        }
-        
-        console.log('✅ Wallet connected successfully');
       } else {
         setError('MetaMask connector not found');
       }
     } catch (err) {
-      console.error('❌ Connection failed:', err);
       setError('Failed to connect to MetaMask: ' + err.message);
-      
-      // Clear any stale connection state
-      localStorage.removeItem('wagmi.connected');
-      localStorage.removeItem('wagmi.address');
-    } finally {
-      setIsConnecting(false);
     }
-  }, [connect, connectors, isDev, isConnecting, chain, switchNetwork]);
+  }, [connect, connectors, isDev]);
 
   const disconnectWallet = useCallback(async () => {
     if (isDev) {
@@ -236,7 +160,6 @@ export function WalletStatusProvider({ children }) {
       value={{
         ...currentStatus,
         isDev,
-        isConnecting,
         connectWallet,
         disconnectWallet,
         resetError,
