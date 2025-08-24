@@ -137,7 +137,8 @@ export default function VRFPregenerationModal({ open, onClose }) {
       }));
 
       // Show success message
-      setSnackbarMessage(`Successfully generated ${result.requestIds.length} VRF proofs using Treasury!`);
+      const proofCount = result.requestIds ? result.requestIds.length : 0;
+      setSnackbarMessage(`Successfully generated ${proofCount} VRF proofs using Treasury!`);
       setShowSnackbar(true);
 
     } catch (error) {

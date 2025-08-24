@@ -3,11 +3,18 @@ import { FaArrowRight, FaCoins, FaBomb, FaDice, FaCog, FaExchangeAlt, FaTimes, F
 import CustomSelect from "@/components/CustomSelect";
 import CustomInput from "@/components/CustomInput";
 import { motion, AnimatePresence } from "framer-motion";
+import { Shield } from "lucide-react";
+import vrfProofService from '@/services/VRFProofService';
+import useWalletStatus from '@/hooks/useWalletStatus';
 
 const DynamicForm = ({ config, onSubmit, gameStatus = { isPlaying: false, hasPlacedBet: false } }) => {
   // State to manage form values
   const [formData, setFormData] = useState({});
   const [expanded, setExpanded] = useState(true);
+  const [vrfProofCount, setVrfProofCount] = useState(0);
+  
+  // Wallet status
+  const { isConnected } = useWalletStatus();
   
   // Initialize form with default values from config
   useEffect(() => {
@@ -19,6 +26,27 @@ const DynamicForm = ({ config, onSubmit, gameStatus = { isPlaying: false, hasPla
     });
     setFormData(initialData);
   }, [config]);
+
+  // Update VRF proof count every 5 seconds
+  useEffect(() => {
+    const updateVrfProofCount = () => {
+      try {
+        const proofStats = vrfProofService.getProofStats();
+        setVrfProofCount(proofStats.availableVRFs.MINES || 0);
+      } catch (error) {
+        console.error('Error updating VRF proof count:', error);
+        setVrfProofCount(0);
+      }
+    };
+
+    // Update immediately
+    updateVrfProofCount();
+
+    // Update every 5 seconds
+    const interval = setInterval(updateVrfProofCount, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -108,6 +136,59 @@ const DynamicForm = ({ config, onSubmit, gameStatus = { isPlaying: false, hasPla
         <button className="p-2 text-white/60 hover:text-white bg-purple-900/20 rounded-full hover:bg-purple-900/30 transition-all">
           {expanded ? <FaAngleUp /> : <FaAngleDown />}
         </button>
+      </div>
+
+      {/* VRF Proof Status */}
+      <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 p-3 border-b border-purple-900/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield size={16} className="text-purple-300" />
+            <span className="text-sm font-medium text-purple-300">VRF Proofs</span>
+          </div>
+          
+          {!isConnected ? (
+            <span className="text-sm text-red-400 font-medium">
+              Connect Wallet
+            </span>
+          ) : (
+            <span className={`text-sm font-bold ${
+              vrfProofCount > 0 ? 'text-green-400' : 'text-red-400'
+            }`}>
+              {vrfProofCount} available
+            </span>
+          )}
+        </div>
+        
+        {!isConnected ? (
+          <div className="mt-2 text-center">
+            <div className="text-xs text-gray-400 mb-2">Connect wallet to view VRF proofs</div>
+            <button
+              onClick={() => {
+                // Trigger wallet connection
+                if (window.ethereum) {
+                  window.ethereum.request({ method: 'eth_requestAccounts' });
+                }
+              }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-all"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        ) : (
+          <>
+            {vrfProofCount <= 0 && (
+              <div className="mt-2 text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
+                Generate proofs first!
+              </div>
+            )}
+            
+            {vrfProofCount > 0 && (
+              <div className="mt-2 text-xs text-purple-300">
+                Each game consumes 1 VRF proof
+              </div>
+            )}
+          </>
+        )}
       </div>
       
       {/* Form Body */}

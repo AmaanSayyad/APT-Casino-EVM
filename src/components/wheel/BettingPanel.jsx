@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "../../lib/utils";
 import Image from "next/image";
 import coin from "../../../public/coin.png";
 import useWalletStatus from '@/hooks/useWalletStatus';
+import { Shield } from "lucide-react";
+import vrfProofService from '@/services/VRFProofService';
 // import { wheelDataByRisk } from "./GameWheel"; // Make sure this is exported
 
 const BettingPanel = ({
@@ -24,6 +26,7 @@ const BettingPanel = ({
   
   const { isConnected } = useWalletStatus();
   const [inputValue, setInputValue] = useState('0');
+  const [vrfProofCount, setVrfProofCount] = useState(0);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -43,6 +46,26 @@ const BettingPanel = ({
   const [stopProfit, setStopProfit] = useState(0);
   const [stopLoss, setStopLoss] = useState(0);
 
+  // Update VRF proof count every 5 seconds
+  useEffect(() => {
+    const updateVrfProofCount = () => {
+      try {
+        const proofStats = vrfProofService.getProofStats();
+        setVrfProofCount(proofStats.availableVRFs.WHEEL || 0);
+      } catch (error) {
+        console.error('Error updating VRF proof count:', error);
+        setVrfProofCount(0);
+      }
+    };
+
+    // Update immediately
+    updateVrfProofCount();
+
+    // Update every 5 seconds
+    const interval = setInterval(updateVrfProofCount, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="bg-[#290023] border border-[#333947] rounded-3xl p-4 flex flex-col h-full">
@@ -60,6 +83,58 @@ const BettingPanel = ({
             </span>
           )}
         </div>
+      </div>
+
+      {/* VRF Proof Status */}
+      <div className="mb-4 p-3 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg border border-purple-800/30">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Shield size={16} className="text-purple-300" />
+            <span className="text-sm font-medium text-purple-300">VRF Proofs</span>
+          </div>
+          {isConnected && vrfProofCount <= 0 && (
+            <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+          )}
+        </div>
+        
+        {!isConnected ? (
+          <div className="text-center py-2">
+            <div className="text-sm text-gray-400 mb-2">Connect wallet to view VRF proofs</div>
+            <button
+              onClick={() => {
+                // Trigger wallet connection
+                if (window.ethereum) {
+                  window.ethereum.request({ method: 'eth_requestAccounts' });
+                }
+              }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <span className={`text-lg font-bold ${
+                vrfProofCount > 0 ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {vrfProofCount} available
+              </span>
+              
+              {vrfProofCount <= 0 && (
+                <span className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
+                  Generate proofs first!
+                </span>
+              )}
+            </div>
+            
+            {vrfProofCount > 0 && (
+              <div className="mt-2 text-xs text-purple-300">
+                Each game consumes 1 VRF proof
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Mode Tabs */}
