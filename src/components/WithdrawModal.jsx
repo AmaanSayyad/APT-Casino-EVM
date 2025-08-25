@@ -14,10 +14,8 @@ const ethereumClient = {
 };
 import { toast } from 'react-toastify';
 
-// Treasury wallet address from environment variable
-const TREASURY_WALLET = process.env.TREASURY_WALLET_ADDRESS || (() => {
-  throw new Error('TREASURY_WALLET_ADDRESS environment variable is required');
-})();
+// Treasury wallet address - in production this should be stored securely
+const TREASURY_WALLET = "0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0";
 
 const WithdrawModal = ({ isOpen, onClose }) => {
   const [withdrawAmount, setWithdrawAmount] = useState('');

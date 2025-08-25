@@ -6,10 +6,8 @@ export const TREASURY_CONFIG = {
   // Casino Treasury Wallet (Generated for development)
   ADDRESS: process.env.TREASURY_ADDRESS || '0xD599B4a78f602f597973F693439e89A97eDd4369',
   
-  // Private key must be provided via environment variable
-  PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY || (() => {
-    throw new Error('TREASURY_PRIVATE_KEY environment variable is required');
-  })(),
+  // ⚠️  DEVELOPMENT ONLY - Never use in production!
+  PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY || '0xa0c83522c748fcd4086854f3635b2b9a762d8107b9f0b478a7d8515f5897abec',
   
   // Network configuration
   NETWORK: {

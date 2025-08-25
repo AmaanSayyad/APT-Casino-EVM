@@ -5,9 +5,7 @@
 export const VRF_CONFIG = {
   CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_VRF_CONTRACT_ADDRESS || '0x1c80757C451adce96d6cADB514036F07fc2347cb',
   TREASURY_ADDRESS: process.env.TREASURY_ADDRESS || '0xD599B4a78f602f597973F693439e89A97eDd4369',
-  TREASURY_PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY || (() => {
-    throw new Error('TREASURY_PRIVATE_KEY environment variable is required');
-  })(),
+  TREASURY_PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY || '0xa0c83522c748fcd4086854f3635b2b9a762d8107b9f0b478a7d8515f5897abec',
   NETWORK: process.env.NEXT_PUBLIC_NETWORK || 'sepolia',
   RPC_URL: process.env.NEXT_PUBLIC_SEPOLIA_RPC || 'https://ethereum-sepolia.publicnode.com',
   VRF_COORDINATOR: '0x50AE5Ea9C3e67Dea8a49ae1cC3f382D220B8947d', // Sepolia

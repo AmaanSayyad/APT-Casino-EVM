@@ -75,9 +75,7 @@ const ethereumClient = {
   }
 };
 
-const CASINO_MODULE_ADDRESS = process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || (() => {
-  throw new Error('NEXT_PUBLIC_CASINO_MODULE_ADDRESS environment variable is required');
-})();
+const CASINO_MODULE_ADDRESS = "0x1234567890123456789012345678901234567890123456789012345678901234";
 
 // Mock search results for demo purposes
 const MOCK_SEARCH_RESULTS = {
