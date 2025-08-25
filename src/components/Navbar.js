@@ -60,22 +60,6 @@ const UserBalanceSystem = {
       console.error('Deposit error:', error);
       throw error;
     }
-  },
-  
-  getDepositHistory: async (userAddress) => {
-    try {
-      const response = await fetch(`/api/deposit?userAddress=${userAddress}`);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to get deposit history');
-      }
-      
-      return result.deposits;
-    } catch (error) {
-      console.error('Get deposit history error:', error);
-      return [];
-    }
   }
 };
 
@@ -139,8 +123,6 @@ export default function Navbar() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [isDepositing, setIsDepositing] = useState(false);
-  const [depositHistory, setDepositHistory] = useState([]);
-  const [showDepositHistory, setShowDepositHistory] = useState(false);
   const [showVRFModal, setShowVRFModal] = useState(false);
 
   // VRF Pregeneration
@@ -252,7 +234,7 @@ export default function Navbar() {
       }
       
       // Load deposit history
-      loadDepositHistory();
+      
     }
   }, [isWalletReady, address]);
   
@@ -272,17 +254,7 @@ export default function Navbar() {
   }, [isWalletReady, address, userBalance]);
   
   // Load deposit history
-  const loadDepositHistory = async () => {
-    if (!address) return;
-    
-    try {
-      const history = await UserBalanceSystem.getDepositHistory(address);
-      setDepositHistory(history);
-    } catch (error) {
-      console.error('Error loading deposit history:', error);
-      setDepositHistory([]);
-    }
-  };
+
 
   // Check if wallet was previously connected on page load
   useEffect(() => {
@@ -572,8 +544,7 @@ export default function Navbar() {
       
       setDepositAmount("");
       
-      // Refresh deposit history
-      await loadDepositHistory();
+      
       
     } catch (error) {
       console.error('Deposit error:', error);
@@ -1202,39 +1173,6 @@ export default function Navbar() {
                   ))}
                 </div>
                 
-                {/* Deposit History Button */}
-                <div className="mt-3">
-                  <button
-                    onClick={() => setShowDepositHistory(!showDepositHistory)}
-                    className="w-full px-3 py-2 text-xs bg-gray-600/50 hover:bg-gray-500/50 text-gray-300 rounded transition-colors flex items-center justify-center gap-2"
-                  >
-                    {showDepositHistory ? 'Hide' : 'Show'} Deposit History
-                    <svg className={`w-3 h-3 transition-transform ${showDepositHistory ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                </div>
-                
-                {/* Deposit History */}
-                {showDepositHistory && (
-                  <div className="mt-3 p-3 bg-gray-800/30 rounded border border-gray-600/30">
-                    <h5 className="text-xs font-medium text-white mb-2">Recent Deposits</h5>
-                    {depositHistory.length > 0 ? (
-                      <div className="space-y-2">
-                        {depositHistory.slice(0, 3).map((deposit) => (
-                          <div key={deposit.id} className="flex justify-between items-center text-xs">
-                            <span className="text-gray-300">{deposit.amount} ETH</span>
-                            <span className="text-gray-400">
-                              {new Date(deposit.timestamp).toLocaleDateString()}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-500 text-center">No deposits yet</p>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Withdraw Section */}
