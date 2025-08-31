@@ -3359,6 +3359,7 @@ export default function GameRoulette() {
           <Grid container spacing={4} sx={{ mb: 7 }}>
             {/* Video on left */}
             <Grid xs={12} md={6}>
+              
               <Box
                 sx={{
                   position: 'relative',
@@ -3411,29 +3412,22 @@ export default function GameRoulette() {
                   }}
                 >
                 </Box>
-                <Box
-                  sx={{
+                <iframe
+                  src={`https://www.youtube.com/embed/${gameData.youtube}?si=${gameData.youtube}`}
+                  title={`${gameData.title} Tutorial`}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
                     height: '100%',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(239, 68, 68, 0.05))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid rgba(220, 38, 38, 0.2)',
                     zIndex: 1
                   }}
-                >
-                  <Typography variant="h6" color="white" textAlign="center">
-                    🎰 Roulette Tutorial<br />
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Learn the basics of European Roulette and master your betting strategy
-                    </Typography>
-                  </Typography>
-                </Box>
+                />
               </Box>
             </Grid>
 
@@ -3488,7 +3482,7 @@ export default function GameRoulette() {
                     textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                   }}
                 >
-                  European Roulette with a single zero and just 2.7% house edge - better odds than traditional casinos. Provably fair and powered by blockchain technology.
+                  European Roulette with a single zero and just 2.7% house edge - better odds than traditional casinos. Provably fair and powered by Aptos on-chain randomness module blockchain technology.
                 </Typography>
 
                 <Typography
