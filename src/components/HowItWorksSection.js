@@ -24,25 +24,25 @@ const HowItWorksSection = () => {
     {
       id: 1,
       title: 'Connect Your Wallet',
-      description: 'Link your Web3 wallet in seconds to unlock the full APT Casino experience. We support MetaMask, WalletConnect, and all major Web3 wallets.',
+      description: 'Link your Web3 wallet in seconds to unlock the full APT Casino experience. We support Keyless login Walets, Petra, MetaMask, NNS and all major Web3 wallets.',
       emoji: '👛'
     },
     {
       id: 2,
-      title: 'Get ETH Tokens',
-      description: 'Power your gameplay with ETH tokens – our exclusive in-game currency built on Ethereum Network. Easily swap from any token or other cryptocurrencies.',
+      title: 'Get APT Tokens',
+      description: 'Power your gameplay with APT tokens built on Aptos Network. Easily swap from any token or other cryptocurrencies.',
       emoji: '💰'
     },
     {
       id: 3,
       title: 'Start Playing',
-      description: 'Dive into our expanding library of provably fair games including Roulette, Blackjack, and Poker. Every game provides real-time stats and detailed history.',
+      description: 'Dive into our expanding library of provably fair games including Roulette, Plinko, Mines and Spin Wheel. Every game provides real-time stats and detailed history.',
       emoji: '🎮'
     },
     {
       id: 4,
       title: 'Earn Rewards',
-      description: 'Win ETH tokens and unlock exclusive perks through our multi-tiered loyalty program. Earn cashback on losses and gain access to tournaments.',
+      description: 'Win APT tokens and unlock exclusive perks through our multi-tiered loyalty program. Earn cashback on losses and gain access to tournaments.',
       emoji: '🏆'
     },
   ];
@@ -112,7 +112,7 @@ const HowItWorksSection = () => {
                   <EthereumConnectWalletButton />
                 ) : (
                   <GradientBorderButton className="transform hover:scale-105 transition-transform">
-                    {activeStep === 2 ? 'Get ETH Tokens' : 
+                    {activeStep === 2 ? 'Get APT Tokens' : 
                      activeStep === 3 ? 'Browse Games' : 'View Rewards'}
                   </GradientBorderButton>
                 )}
@@ -183,4 +183,4 @@ const HowItWorksSection = () => {
   );
 };
 
-export default HowItWorksSection; 
+export default HowItWorksSection;
