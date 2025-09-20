@@ -186,9 +186,21 @@ const VRFStatusModal = ({
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start gap-3">
                 <AlertCircle className="text-red-600 mt-0.5" size={16} />
-                <div>
-                  <p className="text-red-800 font-medium mb-1">VRF Error</p>
-                  <p className="text-red-700 text-sm">{vrfStatus.error}</p>
+                <div className="flex-1">
+                  <p className="text-red-800 font-medium mb-2">VRF Error</p>
+                  <div className="text-red-700 text-sm whitespace-pre-line">
+                    {vrfStatus.error}
+                  </div>
+                  {vrfStatus.error.includes('Treasury needs more ARB ETH funds') && (
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-yellow-800 font-medium text-sm mb-1">💡 Quick Fix:</p>
+                      <p className="text-yellow-700 text-xs">
+                        1. Fund the treasury wallet with ARB ETH<br/>
+                        2. Wait for confirmation<br/>
+                        3. Try generating VRF proofs again
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -10,9 +10,20 @@ const GameHistory = ({ hotNumbers, coldNumbers, recentGames = [] }) => {
     ? recentGames.map(game => game.resultData?.number || 0)
     : [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
   
-  const openEtherscan = (txHash) => {
+  const openArbiscan = (txHash) => {
     if (txHash) {
-      window.open(`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER || 'https://sepolia.etherscan.io'}/tx/${txHash}`, '_blank');
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'arbitrum-sepolia';
+      let explorerUrl;
+      
+      if (network === 'arbitrum-sepolia') {
+        explorerUrl = `https://sepolia.arbiscan.io/tx/${txHash}`;
+      } else if (network === 'arbitrum-one') {
+        explorerUrl = `https://arbiscan.io/tx/${txHash}`;
+      } else {
+        explorerUrl = `https://sepolia.etherscan.io/tx/${txHash}`;
+      }
+      
+      window.open(explorerUrl, '_blank');
     }
   };
 
@@ -45,7 +56,7 @@ const GameHistory = ({ hotNumbers, coldNumbers, recentGames = [] }) => {
             transform: game?.vrfDetails?.transactionHash ? 'scale(1.1)' : 'scale(1.05)',
           }
         }}
-        onClick={() => game?.vrfDetails?.transactionHash && openEtherscan(game.vrfDetails.transactionHash)}
+        onClick={() => game?.vrfDetails?.transactionHash && openArbiscan(game.vrfDetails.transactionHash)}
       >
         {number}
         {game?.vrfDetails?.transactionHash && (

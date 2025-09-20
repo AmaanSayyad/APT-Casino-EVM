@@ -41,12 +41,12 @@ export class VRFManagerService {
       }
 
       // Setup provider and signer
-      this.provider = new ethers.JsonRpcProvider(TREASURY_CONFIG.NETWORK.RPC_URL);
-      this.signer = new ethers.Wallet(TREASURY_CONFIG.PRIVATE_KEY, this.provider);
+      this.provider = new ethers.JsonRpcProvider(VRF_CONFIG.RPC_URL);
+      this.signer = new ethers.Wallet(VRF_CONFIG.TREASURY_PRIVATE_KEY, this.provider);
 
       // Verify treasury address matches
       const signerAddress = await this.signer.getAddress();
-      if (signerAddress.toLowerCase() !== TREASURY_CONFIG.ADDRESS.toLowerCase()) {
+      if (signerAddress.toLowerCase() !== VRF_CONFIG.TREASURY_ADDRESS.toLowerCase()) {
         throw new Error('Treasury private key does not match treasury address');
       }
 
@@ -93,9 +93,21 @@ export class VRFManagerService {
         throw new Error(`Invalid game sub-type: ${gameSubType} for game: ${gameType}`);
       }
 
+      // Check treasury balance before making VRF request
+      const treasuryBalance = await this.provider.getBalance(VRF_CONFIG.TREASURY_ADDRESS);
+      const minRequiredBalance = ethers.parseEther("0.1"); // Minimum 0.1 ARB ETH required
+      
+      if (treasuryBalance < minRequiredBalance) {
+        const balanceInEth = ethers.formatEther(treasuryBalance);
+        const requiredInEth = ethers.formatEther(minRequiredBalance);
+        
+        throw new Error(`Treasury has insufficient ARB ETH funds. Current: ${balanceInEth} ARB ETH, Required: ${requiredInEth} ARB ETH. Please fund the treasury wallet: ${VRF_CONFIG.TREASURY_ADDRESS}`);
+      }
+
       const gameTypeNumber = VRF_CONFIG.getGameTypeNumber(gameType);
       
       console.log(`🎲 Requesting VRF for ${gameType} (${gameSubType})...`);
+      console.log(`💰 Treasury balance: ${ethers.formatEther(treasuryBalance)} ARB ETH`);
 
       // Estimate gas
       const gasEstimate = await this.contract.requestRandomWords.estimateGas(

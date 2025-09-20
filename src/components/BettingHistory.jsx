@@ -4,9 +4,20 @@ import { Box, Typography, Paper, Chip, IconButton, Tooltip } from '@mui/material
 import { OpenInNew, Verified, Security } from '@mui/icons-material';
 
 const BettingHistory = ({ history }) => {
-  const openEtherscan = (txHash) => {
+  const openArbiscan = (txHash) => {
     if (txHash) {
-      window.open(`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER || 'https://sepolia.etherscan.io'}/tx/${txHash}`, '_blank');
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'arbitrum-sepolia';
+      let explorerUrl;
+      
+      if (network === 'arbitrum-sepolia') {
+        explorerUrl = `https://sepolia.arbiscan.io/tx/${txHash}`;
+      } else if (network === 'arbitrum-one') {
+        explorerUrl = `https://arbiscan.io/tx/${txHash}`;
+      } else {
+        explorerUrl = `https://sepolia.etherscan.io/tx/${txHash}`;
+      }
+      
+      window.open(explorerUrl, '_blank');
     }
   };
 
@@ -106,7 +117,7 @@ const BettingHistory = ({ history }) => {
                         transform: bet.vrfDetails?.transactionHash ? 'scale(1.1)' : 'none'
                       }
                     }}
-                    onClick={() => bet.vrfDetails?.transactionHash && openEtherscan(bet.vrfDetails.transactionHash)}
+                    onClick={() => bet.vrfDetails?.transactionHash && openArbiscan(bet.vrfDetails.transactionHash)}
                   >
                     {bet.roll}
                     {bet.vrfDetails?.transactionHash && (
@@ -137,14 +148,14 @@ const BettingHistory = ({ history }) => {
                   <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
                     VRF:
                   </Typography>
-                  <Tooltip title="Click to verify on Etherscan">
+                  <Tooltip title="Click to verify on Arbiscan">
                     <Chip
                       label={formatTxHash(bet.vrfDetails.transactionHash)}
                       size="small"
                       variant="outlined"
                       color="success"
                       icon={<Verified />}
-                      onClick={() => openEtherscan(bet.vrfDetails.transactionHash)}
+                      onClick={() => openArbiscan(bet.vrfDetails.transactionHash)}
                       sx={{ 
                         fontSize: '0.6rem', 
                         height: 20,

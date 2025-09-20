@@ -333,10 +333,11 @@ const RouletteWithHistory = () => {
                   {gameState.vrfDetails.transactionHash.slice(0, 10)}...{gameState.vrfDetails.transactionHash.slice(-8)}
                 </code>
                 <a
-                  href={`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER}/tx/${gameState.vrfDetails.transactionHash}`}
+                  href={`${process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_EXPLORER}/tx/${gameState.vrfDetails.transactionHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-800"
+                  title="View on Arbiscan"
                 >
                   <ExternalLink size={14} />
                 </a>

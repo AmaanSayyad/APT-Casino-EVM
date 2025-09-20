@@ -26,13 +26,13 @@ export async function POST(request) {
     // For now, we'll simulate a successful deposit
     const mockDepositId = 'deposit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
-    console.log(`🏦 Processing deposit: ${amount} ETH from ${userAddress}`);
+    console.log(`🏦 Processing deposit: ${amount} ARB ETH from ${userAddress}`);
     console.log(`📍 Treasury: ${TREASURY_ADDRESS}`);
     
     // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    console.log(`✅ Deposit successful: ${amount} ETH from ${userAddress}`);
+    console.log(`✅ Deposit successful: ${amount} ARB ETH from ${userAddress}`);
     
     return NextResponse.json({
       success: true,

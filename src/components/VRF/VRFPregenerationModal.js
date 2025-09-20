@@ -541,13 +541,25 @@ export default function VRFPregenerationModal({ open, onClose }) {
               </Typography>
               {errorMessage && (
                 <Box sx={{ p: 2, bgcolor: 'rgba(239, 68, 68, 0.2)', borderRadius: '8px', mb: 2 }}>
-                  <Typography variant="body2" sx={{ color: '#EF4444', fontSize: '0.9rem', fontFamily: 'monospace' }}>
+                  <Typography variant="body2" sx={{ color: '#EF4444', fontSize: '0.9rem', whiteSpace: 'pre-line' }}>
                     {errorMessage}
                   </Typography>
                 </Box>
               )}
+              {errorMessage && errorMessage.includes('Treasury needs more ARB ETH funds') && (
+                <Box sx={{ p: 2, bgcolor: 'rgba(255, 193, 7, 0.2)', borderRadius: '8px', mb: 2, border: '1px solid rgba(255, 193, 7, 0.3)' }}>
+                  <Typography variant="body2" sx={{ color: '#FFC107', fontSize: '0.9rem', fontWeight: 'bold', mb: 1 }}>
+                    💡 Quick Fix:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem' }}>
+                    1. Fund the treasury wallet with ARB ETH<br/>
+                    2. Wait for transaction confirmation<br/>
+                    3. Try generating VRF proofs again
+                  </Typography>
+                </Box>
+              )}
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>
-                Please check your wallet connection and try again. Make sure you have enough ETH for gas fees.
+                Please check your wallet connection and try again. Make sure you have enough ARB ETH for gas fees.
               </Typography>
             </Paper>
           )}

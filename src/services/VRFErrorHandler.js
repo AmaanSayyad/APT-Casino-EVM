@@ -5,6 +5,7 @@ import VRF_CONFIG from '../config/vrf.js';
  */
 export const VRFErrorType = {
   INSUFFICIENT_LINK: 'insufficient_link',
+  INSUFFICIENT_TREASURY_FUNDS: 'insufficient_treasury_funds',
   VRF_REQUEST_FAILED: 'vrf_request_failed',
   VRF_FULFILLMENT_TIMEOUT: 'vrf_fulfillment_timeout',
   TREASURY_SIGNATURE_FAILED: 'treasury_signature_failed',
@@ -104,6 +105,11 @@ export class VRFErrorHandler {
     // Network-related errors
     if (message.includes('network') || message.includes('connection') || message.includes('timeout')) {
       return new VRFError(VRFErrorType.NETWORK_ERROR, error.message, context, error);
+    }
+    
+    // Treasury funds related errors
+    if (message.includes('insufficient funds') && message.includes('treasury')) {
+      return new VRFError(VRFErrorType.INSUFFICIENT_TREASURY_FUNDS, error.message, context, error);
     }
     
     // LINK token related errors

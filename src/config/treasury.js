@@ -3,18 +3,18 @@
 
 // Test Treasury Address (Replace with your actual treasury address in production)
 export const TREASURY_CONFIG = {
-  // Casino Treasury Wallet (Generated for development)
-  ADDRESS: process.env.TREASURY_ADDRESS || '0xD599B4a78f602f597973F693439e89A97eDd4369',
+  // Casino Treasury Wallet (Arbitrum Sepolia)
+  ADDRESS: process.env.TREASURY_ADDRESS || '0xb424d2369F07b925D1218B08e56700AF5928287b',
   
   // ⚠️  DEVELOPMENT ONLY - Never use in production!
-  PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY || '0xa0c83522c748fcd4086854f3635b2b9a762d8107b9f0b478a7d8515f5897abec',
+  PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY || '0x080c0b0dc7aa27545fab73d29b06f33e686d1491aef785bf5ced325a32c14506',
   
-  // Network configuration
+  // Network configuration for Arbitrum Sepolia
   NETWORK: {
-    CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID || '0xaa36a7', // Sepolia testnet
-    CHAIN_NAME: process.env.NEXT_PUBLIC_NETWORK || 'Sepolia',
-    RPC_URL: process.env.NEXT_PUBLIC_SEPOLIA_RPC || 'https://rpc.sepolia.org',
-    EXPLORER_URL: process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER || 'https://sepolia.etherscan.io'
+    CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID || '0x66eee', // Arbitrum Sepolia testnet
+    CHAIN_NAME: process.env.NEXT_PUBLIC_NETWORK || 'Arbitrum Sepolia',
+    RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC || 'https://sepolia-rollup.arbitrum.io/rpc',
+    EXPLORER_URL: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_EXPLORER || 'https://sepolia.arbiscan.io'
   },
   
   // Gas settings for transactions
@@ -23,10 +23,10 @@ export const TREASURY_CONFIG = {
     WITHDRAW_LIMIT: process.env.GAS_LIMIT_WITHDRAW ? '0x' + parseInt(process.env.GAS_LIMIT_WITHDRAW).toString(16) : '0x186A0', // 100000 gas for more complex operations
   },
   
-  // Minimum and maximum deposit amounts
+  // Minimum and maximum deposit amounts (in ARB ETH)
   LIMITS: {
-    MIN_DEPOSIT: parseFloat(process.env.MIN_DEPOSIT) || 0.001, // 0.001 ETH minimum
-    MAX_DEPOSIT: parseFloat(process.env.MAX_DEPOSIT) || 100, // 100 ETH maximum
+    MIN_DEPOSIT: parseFloat(process.env.MIN_DEPOSIT) || 0.001, // 0.001 ARB ETH minimum
+    MAX_DEPOSIT: parseFloat(process.env.MAX_DEPOSIT) || 100, // 100 ARB ETH maximum
   }
 };
 

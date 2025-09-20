@@ -11,7 +11,8 @@ import {
   Grid,
   Divider
 } from '@mui/material';
-import { ExpandMore, ExpandLess, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import vrfProofService from '../../services/VRFProofService';
 
 const GameHistoryCard = ({ game, gameType }) => {
@@ -40,8 +41,17 @@ const GameHistoryCard = ({ game, gameType }) => {
   };
 
   const openTransaction = (txHash, logIndex) => {
-    const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
-    const explorerUrl = `https://${network}.etherscan.io/tx/${txHash}#eventlog`;
+    const network = process.env.NEXT_PUBLIC_NETWORK || 'arbitrum-sepolia';
+    let explorerUrl;
+    
+    if (network === 'arbitrum-sepolia') {
+      explorerUrl = `https://sepolia.arbiscan.io/tx/${txHash}#eventlog`;
+    } else if (network === 'arbitrum-one') {
+      explorerUrl = `https://arbiscan.io/tx/${txHash}#eventlog`;
+    } else {
+      explorerUrl = `https://sepolia.etherscan.io/tx/${txHash}#eventlog`;
+    }
+    
     window.open(explorerUrl, '_blank');
   };
 

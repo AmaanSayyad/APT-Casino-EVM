@@ -114,10 +114,19 @@ export const useVRFPregeneration = () => {
       }
     } catch (error) {
       console.error('❌ VRF proof creation failed:', error);
+      
+      // Check if it's a treasury funds error
+      let userFriendlyError = error.message;
+      if (error.message.includes('Treasury has insufficient ARB ETH funds')) {
+        userFriendlyError = `💰 Treasury needs more ARB ETH funds!\n\nCurrent balance is too low to generate VRF proofs.\n\nPlease fund the treasury wallet or contact support.\n\nTreasury Address: ${error.message.split('Please fund the treasury wallet: ')[1] || 'Check console for details'}`;
+      } else if (error.message.includes('insufficient funds')) {
+        userFriendlyError = `💰 Insufficient funds detected!\n\nThis could be due to:\n• Treasury wallet needs ARB ETH\n• VRF subscription needs LINK tokens\n• Gas fees too high\n\nPlease check the treasury balance and try again.`;
+      }
+      
       setVrfStatus(prev => ({
         ...prev,
         isGenerating: false,
-        error: error.message
+        error: userFriendlyError
       }));
       throw error;
     }

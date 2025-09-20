@@ -1,50 +1,50 @@
-// Ethereum Network Configuration
-export const ETHEREUM_NETWORKS = {
-  TESTNET: 'testnet',
-  MAINNET: 'mainnet',
-  DEVNET: 'devnet'
+// Arbitrum Network Configuration
+export const ARBITRUM_NETWORKS = {
+  SEPOLIA: 'arbitrum-sepolia',
+  MAINNET: 'arbitrum-one',
+  DEVNET: 'arbitrum-devnet'
 };
 
-// Ethereum Network URLs
-export const ETHEREUM_NETWORK_URLS = {
-  [ETHEREUM_NETWORKS.TESTNET]: "https://fullnode.testnet.ethereum.org",
-  [ETHEREUM_NETWORKS.MAINNET]: "https://fullnode.mainnet.ethereum.org",
-  [ETHEREUM_NETWORKS.DEVNET]: "https://fullnode.devnet.ethereum.org"
+// Arbitrum Network URLs
+export const ARBITRUM_NETWORK_URLS = {
+  [ARBITRUM_NETWORKS.SEPOLIA]: "https://sepolia-rollup.arbitrum.io/rpc",
+  [ARBITRUM_NETWORKS.MAINNET]: "https://arb1.arbitrum.io/rpc",
+  [ARBITRUM_NETWORKS.DEVNET]: "http://localhost:8545"
 };
 
-// Ethereum Faucet URLs
-export const ETHEREUM_FAUCET_URLS = {
-  [ETHEREUM_NETWORKS.TESTNET]: "https://faucet.testnet.ethereum.org",
-  [ETHEREUM_NETWORKS.DEVNET]: "https://faucet.devnet.ethereum.org"
+// Arbitrum Faucet URLs
+export const ARBITRUM_FAUCET_URLS = {
+  [ARBITRUM_NETWORKS.SEPOLIA]: "https://faucet.triangleplatform.com/arbitrum/sepolia",
+  [ARBITRUM_NETWORKS.DEVNET]: "http://localhost:8545"
 };
 
-// Ethereum Explorer URLs
-export const ETHEREUM_EXPLORER_URLS = {
-  [ETHEREUM_NETWORKS.TESTNET]: "https://explorer.testnet.ethereum.org/account",
-  [ETHEREUM_NETWORKS.MAINNET]: "https://explorer.ethereum.org/account",
-  [ETHEREUM_NETWORKS.DEVNET]: "https://explorer.devnet.ethereum.org/account"
+// Arbitrum Explorer URLs
+export const ARBITRUM_EXPLORER_URLS = {
+  [ARBITRUM_NETWORKS.SEPOLIA]: "https://sepolia.arbiscan.io",
+  [ARBITRUM_NETWORKS.MAINNET]: "https://arbiscan.io",
+  [ARBITRUM_NETWORKS.DEVNET]: "http://localhost:8545"
 };
 
 // Default network (can be changed via environment variable)
-export const DEFAULT_NETWORK = ETHEREUM_NETWORKS.TESTNET;
+export const DEFAULT_NETWORK = ARBITRUM_NETWORKS.SEPOLIA;
 
 // Casino Module Configuration
 export const CASINO_MODULE_CONFIG = {
-  [ETHEREUM_NETWORKS.TESTNET]: {
+  [ARBITRUM_NETWORKS.SEPOLIA]: {
     moduleAddress: process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || "0x1234567890123456789012345678901234567890123456789012345678901234",
     moduleName: "casino",
     rouletteModule: "roulette",
     minesModule: "mines",
     wheelModule: "wheel"
   },
-  [ETHEREUM_NETWORKS.MAINNET]: {
+  [ARBITRUM_NETWORKS.MAINNET]: {
     moduleAddress: process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || "0x1234567890123456789012345678901234567890123456789012345678901234",
     moduleName: "casino",
     rouletteModule: "roulette",
     minesModule: "mines",
     wheelModule: "wheel"
   },
-  [ETHEREUM_NETWORKS.DEVNET]: {
+  [ARBITRUM_NETWORKS.DEVNET]: {
     moduleAddress: process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || "0x1234567890123456789012345678901234567890123456789012345678901234",
     moduleName: "casino",
     rouletteModule: "roulette",
@@ -53,52 +53,52 @@ export const CASINO_MODULE_CONFIG = {
   }
 };
 
-// Token Configuration
+// Token Configuration for Arbitrum
 export const TOKEN_CONFIG = {
-  ETH: {
-    name: "Ethereum Coin",
-    symbol: "ETH",
+  ARB: {
+    name: "Arbitrum ETH",
+    symbol: "ARB",
     decimals: 18,
-    type: "0x1::ethereum_coin::EthereumCoin"
+    type: "native"
   },
-  ETH: {
-    name: "ETH Casino Token",
-    symbol: "ETH",
-    decimals: 8,
-    type: "0x1::coin::CoinStore<0x1::ethereum_coin::EthereumCoin>"
+  ARB_ETH: {
+    name: "Arbitrum ETH",
+    symbol: "ARB",
+    decimals: 18,
+    type: "native"
   }
 };
 
-// Network Information
+// Network Information for Arbitrum
 export const NETWORK_INFO = {
-  [ETHEREUM_NETWORKS.TESTNET]: {
-    name: "Ethereum Testnet",
-    chainId: 5,
-    nativeCurrency: TOKEN_CONFIG.ETH,
-    explorer: ETHEREUM_EXPLORER_URLS[ETHEREUM_NETWORKS.TESTNET],
-    faucet: ETHEREUM_FAUCET_URLS[ETHEREUM_NETWORKS.TESTNET]
+  [ARBITRUM_NETWORKS.SEPOLIA]: {
+    name: "Arbitrum Sepolia",
+    chainId: 421614,
+    nativeCurrency: TOKEN_CONFIG.ARB,
+    explorer: ARBITRUM_EXPLORER_URLS[ARBITRUM_NETWORKS.SEPOLIA],
+    faucet: ARBITRUM_FAUCET_URLS[ARBITRUM_NETWORKS.SEPOLIA]
   },
-  [ETHEREUM_NETWORKS.MAINNET]: {
-    name: "Ethereum Mainnet",
-    chainId: 1,
-    nativeCurrency: TOKEN_CONFIG.ETH,
-    explorer: ETHEREUM_EXPLORER_URLS[ETHEREUM_NETWORKS.MAINNET]
+  [ARBITRUM_NETWORKS.MAINNET]: {
+    name: "Arbitrum One",
+    chainId: 42161,
+    nativeCurrency: TOKEN_CONFIG.ARB,
+    explorer: ARBITRUM_EXPLORER_URLS[ARBITRUM_NETWORKS.MAINNET]
   },
-  [ETHEREUM_NETWORKS.DEVNET]: {
-    name: "Ethereum Devnet",
+  [ARBITRUM_NETWORKS.DEVNET]: {
+    name: "Arbitrum Devnet",
     chainId: 1337,
-    nativeCurrency: TOKEN_CONFIG.ETH,
-    explorer: ETHEREUM_EXPLORER_URLS[ETHEREUM_NETWORKS.DEVNET],
-    faucet: ETHEREUM_FAUCET_URLS[ETHEREUM_NETWORKS.DEVNET]
+    nativeCurrency: TOKEN_CONFIG.ARB,
+    explorer: ARBITRUM_EXPLORER_URLS[ARBITRUM_NETWORKS.DEVNET],
+    faucet: ARBITRUM_FAUCET_URLS[ARBITRUM_NETWORKS.DEVNET]
   }
 };
 
 // Export default configuration
 export default {
-  ETHEREUM_NETWORKS,
-  ETHEREUM_NETWORK_URLS,
-  ETHEREUM_FAUCET_URLS,
-  ETHEREUM_EXPLORER_URLS,
+  ARBITRUM_NETWORKS,
+  ARBITRUM_NETWORK_URLS,
+  ARBITRUM_FAUCET_URLS,
+  ARBITRUM_EXPLORER_URLS,
   DEFAULT_NETWORK,
   CASINO_MODULE_CONFIG,
   TOKEN_CONFIG,

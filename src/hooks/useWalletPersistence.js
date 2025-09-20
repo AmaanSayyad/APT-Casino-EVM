@@ -11,32 +11,40 @@ export const useWalletPersistence = () => {
   const { disconnect } = useDisconnect();
 
   useEffect(() => {
-    // Check if wallet was previously connected
-    const wasConnected = localStorage.getItem('wagmi.connected');
-    const lastConnectedConnector = localStorage.getItem('wagmi.connector');
-    
-    console.log('🔍 Wallet persistence check:', { 
-      wasConnected, 
-      lastConnectedConnector, 
-      isConnected, 
-      address 
-    });
+    // Add a small delay to ensure connectors are ready
+    const timer = setTimeout(() => {
+      // Check if wallet was previously connected
+      const wasConnected = localStorage.getItem('wagmi.connected');
+      const lastConnectedConnector = localStorage.getItem('wagmi.connector');
+      
+      console.log('🔍 Wallet persistence check:', { 
+        wasConnected, 
+        lastConnectedConnector, 
+        isConnected, 
+        address,
+        connectorsCount: connectors.length
+      });
 
-    // If wallet was connected but is not currently connected, try to reconnect
-    if (wasConnected === 'true' && !isConnected && connectors.length > 0) {
-      console.log('🔄 Attempting to reconnect wallet...');
-      
-      // Find the last used connector or default to MetaMask
-      const targetConnector = connectors.find(c => 
-        c.name.toLowerCase().includes('metamask') || 
-        c.name.toLowerCase().includes(lastConnectedConnector?.toLowerCase() || '')
-      ) || connectors[0];
-      
-      if (targetConnector) {
-        console.log('🔗 Reconnecting with connector:', targetConnector.name);
-        connect({ connector: targetConnector });
+      // If wallet was connected but is not currently connected, try to reconnect
+      if (wasConnected === 'true' && !isConnected && connectors.length > 0) {
+        console.log('🔄 Attempting to reconnect wallet...');
+        
+        // Find the last used connector or default to MetaMask
+        const targetConnector = connectors.find(c => 
+          c.name.toLowerCase().includes('metamask') || 
+          c.name.toLowerCase().includes(lastConnectedConnector?.toLowerCase() || '')
+        ) || connectors[0];
+        
+        if (targetConnector) {
+          console.log('🔗 Reconnecting with connector:', targetConnector.name);
+          connect({ connector: targetConnector }).catch(error => {
+            console.error('❌ Reconnection failed:', error);
+          });
+        }
       }
-    }
+    }, 1000); // 1 second delay
+
+    return () => clearTimeout(timer);
   }, [isConnected, address, connect, connectors]);
 
   // Save connection state when wallet connects
@@ -45,8 +53,14 @@ export const useWalletPersistence = () => {
       console.log('✅ Wallet connected, saving state');
       localStorage.setItem('wagmi.connected', 'true');
       localStorage.setItem('wagmi.address', address);
+      
+      // Also save the connector info for better reconnection
+      const currentConnector = connectors.find(c => c.name.toLowerCase().includes('metamask'));
+      if (currentConnector) {
+        localStorage.setItem('wagmi.connector', currentConnector.name);
+      }
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, connectors]);
 
   // Clear connection state when wallet disconnects
   useEffect(() => {

@@ -4,11 +4,11 @@ import { ethers } from 'ethers';
 // Treasury private key from environment
 const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "0xa0c83522c748fcd4086854f3635b2b9a762d8107b9f0b478a7d8515f5897abec";
 
-// Sepolia RPC URL
-const SEPOLIA_RPC = process.env.NEXT_PUBLIC_SEPOLIA_RPC || 'https://rpc.sepolia.org';
+// Arbitrum Sepolia RPC URL
+const ARBITRUM_SEPOLIA_RPC = process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC || 'https://sepolia-rollup.arbitrum.io/rpc';
 
 // Create provider and wallet
-const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+const provider = new ethers.JsonRpcProvider(ARBITRUM_SEPOLIA_RPC);
 const treasuryWallet = new ethers.Wallet(TREASURY_PRIVATE_KEY, provider);
 
 export async function POST(request) {
@@ -36,14 +36,14 @@ export async function POST(request) {
       );
     }
 
-    console.log(`🏦 Processing withdrawal: ${amount} ETH to ${userAddress}`);
+    console.log(`🏦 Processing withdrawal: ${amount} ARB ETH to ${userAddress}`);
     console.log(`📍 Treasury: ${treasuryWallet.address}`);
     
     // Check treasury balance
     let treasuryBalance = 0;
     try {
       treasuryBalance = await provider.getBalance(treasuryWallet.address);
-      console.log(`💰 Treasury balance: ${ethers.formatEther(treasuryBalance)} ETH`);
+      console.log(`💰 Treasury balance: ${ethers.formatEther(treasuryBalance)} ARB ETH`);
     } catch (balanceError) {
       console.log('⚠️ Could not check treasury balance, proceeding with transfer attempt...');
       console.log('Balance error:', balanceError.message);
@@ -53,7 +53,7 @@ export async function POST(request) {
     const amountWei = ethers.parseEther(amount.toString());
     if (treasuryBalance < amountWei) {
       return NextResponse.json(
-        { error: `Insufficient treasury funds. Available: ${ethers.formatEther(treasuryBalance)} ETH, Requested: ${amount} ETH` },
+        { error: `Insufficient treasury funds. Available: ${ethers.formatEther(treasuryBalance)} ARB ETH, Requested: ${amount} ARB ETH` },
         { status: 400 }
       );
     }
@@ -85,7 +85,7 @@ export async function POST(request) {
     
     // Return transaction hash immediately without waiting for confirmation
     // User can check transaction status on Etherscan
-    console.log(`✅ Withdrawal transaction sent: ${amount} ETH to ${userAddress}, TX: ${tx.hash}`);
+    console.log(`✅ Withdrawal transaction sent: ${amount} ARB ETH to ${userAddress}, TX: ${tx.hash}`);
     
     return new Response(JSON.stringify({
       success: true,

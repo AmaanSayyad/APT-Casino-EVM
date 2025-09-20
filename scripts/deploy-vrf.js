@@ -1,9 +1,9 @@
 const { ethers } = require("hardhat");
 
-// Chainlink VRF v2 configuration for Sepolia testnet
+// Chainlink VRF v2 configuration for Arbitrum Sepolia testnet
 const VRF_CONFIG = {
-  COORDINATOR: "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625", // Sepolia VRF Coordinator
-  KEY_HASH: "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c", // 30 gwei Key Hash
+  COORDINATOR: "0x6D80646bEAdd07cE68cab36c27c626790bBcf17f", // Arbitrum Sepolia VRF Coordinator
+  KEY_HASH: "0x83d1b6e3388bed3d76426974512bb0d270e9542a765cd667242ea26c0cc0b730", // Arbitrum Sepolia Key Hash
   SUBSCRIPTION_ID: "0", // Start with 0, will be updated after deployment
   CALLBACK_GAS_LIMIT: 2500000,
   REQUEST_CONFIRMATIONS: 3,
@@ -26,7 +26,7 @@ async function main() {
   console.log("Account balance:", ethers.formatEther(await deployer.provider.getBalance(deployer.address)), "ETH");
 
   // Validate treasury address
-  const treasuryAddress = process.env.TREASURY_ADDRESS;
+  const treasuryAddress = process.env.TREASURY_ADDRESS || "0xb424d2369F07b925D1218B08e56700AF5928287b";
   if (!ethers.isAddress(treasuryAddress)) {
     throw new Error(`Invalid treasury address: ${treasuryAddress}`);
   }

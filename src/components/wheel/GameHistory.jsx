@@ -15,10 +15,21 @@ const GameHistory = ({ gameHistory }) => {
     return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
   };
   
-  // Open Etherscan link
-  const openEtherscan = (hash) => {
+  // Open Arbiscan link
+  const openArbiscan = (hash) => {
     if (hash) {
-      window.open(`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER}/tx/${hash}`, '_blank');
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'arbitrum-sepolia';
+      let explorerUrl;
+      
+      if (network === 'arbitrum-sepolia') {
+        explorerUrl = `https://sepolia.arbiscan.io/tx/${hash}`;
+      } else if (network === 'arbitrum-one') {
+        explorerUrl = `https://arbiscan.io/tx/${hash}`;
+      } else {
+        explorerUrl = `https://sepolia.etherscan.io/tx/${hash}`;
+      }
+      
+      window.open(explorerUrl, '_blank');
     }
   };
   
@@ -120,9 +131,9 @@ const GameHistory = ({ gameHistory }) => {
                       {item.vrfDetails?.transactionHash ? (
                         <div className="flex flex-col space-y-1">
                           <button
-                            onClick={() => openEtherscan(item.vrfDetails.transactionHash)}
+                            onClick={() => openArbiscan(item.vrfDetails.transactionHash)}
                             className="flex items-center space-x-2 text-purple-400 hover:text-purple-300 transition-colors"
-                            title="Click to verify on Etherscan"
+                            title="Click to verify on Arbiscan"
                           >
                             <span className="text-xs font-mono">
                               {formatTxHash(item.vrfDetails.transactionHash)}

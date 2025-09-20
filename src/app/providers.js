@@ -9,8 +9,17 @@ import { NotificationProvider } from '@/components/NotificationSystem';
 import WalletConnectionGuard from '@/components/WalletConnectionGuard';
 import { ThemeProvider } from 'next-themes';
 import { WagmiProvider, createConfig, http } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
-import { injected, metaMask } from '@wagmi/connectors';
+import { arbitrumSepolia } from 'wagmi/chains';
+import { RainbowKitProvider, getDefaultConfig, connectorsForWallets } from '@rainbow-me/rainbowkit';
+import { 
+  metaMaskWallet,
+  walletConnectWallet,
+  injectedWallet,
+  rainbowWallet,
+  coinbaseWallet,
+  trustWallet
+} from '@rainbow-me/rainbowkit/wallets';
+import '@rainbow-me/rainbowkit/styles.css';
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -80,44 +89,86 @@ export default function Providers({ children }) {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: 'linear-gradient(135deg, #0A0008 0%, #1A0015 100%)'
+      }}>
+        <div style={{ color: 'white', fontSize: '18px' }}>Loading...</div>
+      </div>
+    );
+  }
 
-  // Wagmi configuration with MetaMask and persistence
-  const config = createConfig({
-    chains: [sepolia],
-    connectors: [
-      metaMask({
-        dappMetadata: {
-          name: 'APT Casino',
-          url: typeof window !== 'undefined' ? window.location.origin : '',
-        },
-      }),
-      injected(),
-    ],
-    ssr: true,
-    storage: typeof window !== 'undefined' ? {
-      getItem: (key) => localStorage.getItem(key),
-      setItem: (key, value) => localStorage.setItem(key, value),
-      removeItem: (key) => localStorage.removeItem(key),
-    } : undefined,
-  });
+  // Debug logging
+  console.log('🔧 Providers mounting...');
+  console.log('🔧 Project ID: 226b43b703188d269fb70d02c107c34e');
+
+  // RainbowKit configuration for Arbitrum
+  let config;
+  
+  try {
+    config = getDefaultConfig({
+      appName: 'APT Casino',
+      projectId: '226b43b703188d269fb70d02c107c34e',
+      chains: [arbitrumSepolia],
+      ssr: true,
+    });
+    console.log('🔧 Config created with getDefaultConfig:', config);
+  } catch (error) {
+    console.error('❌ Error creating config with getDefaultConfig:', error);
+    
+    // Fallback to manual config
+    const connectors = connectorsForWallets([
+      {
+        groupName: 'Popular',
+        wallets: [
+          metaMaskWallet,
+          walletConnectWallet,
+          injectedWallet,
+          rainbowWallet,
+          coinbaseWallet,
+          trustWallet,
+        ],
+      },
+    ], {
+      appName: 'APT Casino',
+      projectId: '226b43b703188d269fb70d02c107c34e',
+    });
+
+    config = createConfig({
+      connectors,
+      chains: [arbitrumSepolia],
+    transports: {
+      [arbitrumSepolia.id]: http(),
+    },
+      ssr: true,
+    });
+    console.log('🔧 Config created with manual setup:', config);
+  }
 
   return (
     <Provider store={store}>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <NotificationProvider>
-            <WalletStatusProvider>
-              <WalletConnectionGuard>
-                <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-                  <MuiThemeProvider theme={muiTheme}>
-                    <CssBaseline />
-                    {children}
-                  </MuiThemeProvider>
-                </ThemeProvider>
-              </WalletConnectionGuard>
-            </WalletStatusProvider>
-          </NotificationProvider>
+          <RainbowKitProvider>
+            <NotificationProvider>
+              <WalletStatusProvider>
+                <WalletConnectionGuard>
+                  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+                    <MuiThemeProvider theme={muiTheme}>
+                      <CssBaseline />
+                      {children}
+                    </MuiThemeProvider>
+                  </ThemeProvider>
+                </WalletConnectionGuard>
+              </WalletStatusProvider>
+            </NotificationProvider>
+          </RainbowKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </Provider>

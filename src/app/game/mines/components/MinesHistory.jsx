@@ -11,11 +11,20 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
 
-  // Open Etherscan link for transaction hash
-  const openEtherscan = (hash) => {
+  // Open Arbiscan link for transaction hash
+  const openArbiscan = (hash) => {
     if (hash && hash !== 'unknown') {
-      const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
-      const explorerUrl = `https://${network}.etherscan.io/tx/${hash}`;
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'arbitrum-sepolia';
+      let explorerUrl;
+      
+      if (network === 'arbitrum-sepolia') {
+        explorerUrl = `https://sepolia.arbiscan.io/tx/${hash}`;
+      } else if (network === 'arbitrum-one') {
+        explorerUrl = `https://arbiscan.io/tx/${hash}`;
+      } else {
+        explorerUrl = `https://sepolia.etherscan.io/tx/${hash}`;
+      }
+      
       window.open(explorerUrl, '_blank');
     }
   };
@@ -312,9 +321,9 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
                         }
                       </span>
                       <button
-                        onClick={() => openEtherscan(game.vrfProof.transactionHash)}
+                        onClick={() => openArbiscan(game.vrfProof.transactionHash)}
                         className="text-blue-400 hover:text-blue-300 text-xs underline cursor-pointer"
-                        title="View on Etherscan"
+                        title="View on Arbiscan"
                       >
                         TX
                       </button>

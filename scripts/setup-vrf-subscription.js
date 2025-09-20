@@ -1,131 +1,185 @@
 const { ethers } = require("hardhat");
 
-// Chainlink VRF v2 Subscription Manager for Sepolia
-const SUBSCRIPTION_MANAGER_ADDRESS = "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625";
-
-// Minimal ABI for VRF Coordinator V2
+// Arbitrum Sepolia VRF Coordinator ABI (sadece ihtiyacımız olan fonksiyonlar)
 const VRF_COORDINATOR_ABI = [
   "function createSubscription() external returns (uint64 subId)",
   "function addConsumer(uint64 subId, address consumer) external",
-  "function fundSubscription(uint64 subId, uint96 amount) external",
+  "function removeConsumer(uint64 subId, address consumer) external",
   "function getSubscription(uint64 subId) external view returns (uint96 balance, uint64 reqCount, address owner, address[] memory consumers)",
+  "function requestSubscriptionOwnerTransfer(uint64 subId, address newOwner) external",
+  "function acceptSubscriptionOwnerTransfer(uint64 subId) external"
 ];
 
-// LINK Token ABI (minimal)
-const LINK_TOKEN_ABI = [
-  "function transfer(address to, uint256 value) external returns (bool)",
-  "function transferAndCall(address to, uint256 value, bytes calldata data) external returns (bool)",
-  "function balanceOf(address account) external view returns (uint256)",
-  "function approve(address spender, uint256 amount) external returns (bool)",
-];
-
-const LINK_TOKEN_ADDRESS = "0x779877A7B0D9E8603169DdbD7836e478b4624789"; // Sepolia LINK
+const ARBITRUM_SEPOLIA_VRF_COORDINATOR = "0x6D80646bEAdd07cE68cab36c27c626790bBcf17f";
 
 async function main() {
-  console.log("🔗 Setting up Chainlink VRF v2 Subscription...");
-  
-  const [deployer] = await ethers.getSigners();
-  console.log("Using account:", deployer.address);
+  require('dotenv').config({ path: '.env.local' });
+  console.log("🔧 Setting up VRF Subscription for Arbitrum Sepolia...");
+
+  const [signer] = await ethers.getSigners();
+  console.log("Using account:", signer.address);
+
+  const balance = await ethers.provider.getBalance(signer.address);
+  console.log("Account balance:", ethers.formatEther(balance), "ETH");
 
   // Connect to VRF Coordinator
   const vrfCoordinator = new ethers.Contract(
-    SUBSCRIPTION_MANAGER_ADDRESS,
+    ARBITRUM_SEPOLIA_VRF_COORDINATOR,
     VRF_COORDINATOR_ABI,
-    deployer
+    signer
   );
 
-  // Connect to LINK token
-  const linkToken = new ethers.Contract(
-    LINK_TOKEN_ADDRESS,
-    LINK_TOKEN_ABI,
-    deployer
-  );
+  // Get action from environment variable or default to info
+  const action = process.env.VRF_ACTION || "info";
 
+  switch (action) {
+    case "create":
+      await createSubscription(vrfCoordinator);
+      break;
+    case "info":
+      await getSubscriptionInfo(vrfCoordinator);
+      break;
+    case "add-consumer":
+      await addConsumer(vrfCoordinator);
+      break;
+    case "remove-consumer":
+      await removeConsumer(vrfCoordinator);
+      break;
+    default:
+      console.log("Usage:");
+      console.log("  npm run setup-vrf create           - Create new subscription");
+      console.log("  npm run setup-vrf info             - Get subscription info");
+      console.log("  npm run setup-vrf add-consumer     - Add consumer to subscription");
+      console.log("  npm run setup-vrf remove-consumer  - Remove consumer from subscription");
+      console.log("");
+      console.log("Environment variables needed:");
+      console.log("  VRF_SUBSCRIPTION_ID - Your VRF subscription ID");
+      console.log("  CONSUMER_ADDRESS    - Contract address to add/remove as consumer");
+  }
+}
+
+async function createSubscription(vrfCoordinator) {
   try {
-    // Check LINK balance
-    const linkBalance = await linkToken.balanceOf(deployer.address);
-    console.log("LINK balance:", ethers.formatEther(linkBalance), "LINK");
-
-    if (linkBalance < ethers.parseEther("2")) {
-      console.log("⚠️  Warning: You need at least 2 LINK tokens to fund the subscription");
-      console.log("Get LINK tokens from: https://faucets.chain.link/sepolia");
-    }
-
-    // Create subscription
-    console.log("Creating VRF subscription...");
-    const createTx = await vrfCoordinator.createSubscription();
-    const receipt = await createTx.wait();
+    console.log("📝 Creating new VRF subscription...");
     
-    // Extract subscription ID from logs
-    const subscriptionId = receipt.logs[0].topics[1];
-    const subId = parseInt(subscriptionId, 16);
+    const tx = await vrfCoordinator.createSubscription();
+    console.log("📤 Transaction sent:", tx.hash);
     
-    console.log("✅ Subscription created with ID:", subId);
+    const receipt = await tx.wait();
+    console.log("✅ Transaction confirmed in block:", receipt.blockNumber);
 
-    // Fund subscription with 2 LINK
-    if (linkBalance >= ethers.parseEther("2")) {
-      console.log("Funding subscription with 2 LINK...");
-      
-      // Encode the subscription ID for transferAndCall
-      const encodedSubId = ethers.AbiCoder.defaultAbiCoder().encode(["uint64"], [subId]);
-      
-      const fundTx = await linkToken.transferAndCall(
-        SUBSCRIPTION_MANAGER_ADDRESS,
-        ethers.parseEther("2"),
-        encodedSubId
-      );
-      await fundTx.wait();
-      
-      console.log("✅ Subscription funded with 2 LINK");
-    }
-
-    // Get subscription details
-    const subscription = await vrfCoordinator.getSubscription(subId);
-    console.log("\n📊 Subscription Details:");
-    console.log("- Subscription ID:", subId);
-    console.log("- Balance:", ethers.formatEther(subscription.balance), "LINK");
-    console.log("- Request Count:", subscription.reqCount.toString());
-    console.log("- Owner:", subscription.owner);
-    console.log("- Consumers:", subscription.consumers);
-
-    // Save subscription info
-    const subscriptionInfo = {
-      subscriptionId: subId,
-      owner: subscription.owner,
-      balance: ethers.formatEther(subscription.balance),
-      network: "sepolia",
-      createdAt: new Date().toISOString(),
-      transactionHash: createTx.hash,
-    };
-
-    const fs = require("fs");
-    const path = require("path");
+    // Parse logs to find subscription ID
+    const subscriptionCreatedTopic = "0x464722b4166576d3dcbba877b999bc35cf911f4eaf434b7eba68fa113951d0bf";
+    const log = receipt.logs.find(log => log.topics[0] === subscriptionCreatedTopic);
     
-    const deploymentsDir = path.join(__dirname, "../deployments");
-    if (!fs.existsSync(deploymentsDir)) {
-      fs.mkdirSync(deploymentsDir, { recursive: true });
+    if (log) {
+      const subscriptionId = parseInt(log.topics[1], 16);
+      console.log("🎯 New Subscription ID:", subscriptionId);
+      console.log("");
+      console.log("📋 Next steps:");
+      console.log("1. Add this to your .env.local file:");
+      console.log(`   VRF_SUBSCRIPTION_ID=${subscriptionId}`);
+      console.log("2. Fund the subscription with LINK tokens at https://vrf.chain.link/");
+      console.log("3. Deploy your contract");
+      console.log("4. Add your contract as a consumer");
+    } else {
+      console.log("❌ Could not find subscription ID in transaction logs");
     }
-
-    fs.writeFileSync(
-      path.join(deploymentsDir, "vrf-subscription-sepolia.json"),
-      JSON.stringify(subscriptionInfo, null, 2)
-    );
-
-    console.log("\n💾 Subscription info saved to deployments/vrf-subscription-sepolia.json");
-    console.log("\n📋 Next Steps:");
-    console.log("1. Update your .env file with:");
-    console.log(`   VRF_SUBSCRIPTION_ID=${subId}`);
-    console.log("2. Deploy your VRF consumer contract");
-    console.log("3. Add the consumer contract to this subscription");
 
   } catch (error) {
-    console.error("❌ Setup failed:", error);
+    console.error("❌ Error creating subscription:", error.message);
+  }
+}
+
+async function getSubscriptionInfo(vrfCoordinator) {
+  require('dotenv').config({ path: '.env.local' });
+  const subscriptionId = process.env.VRF_SUBSCRIPTION_ID;
+  
+  if (!subscriptionId) {
+    console.log("❌ VRF_SUBSCRIPTION_ID not found in environment variables");
+    return;
+  }
+
+  try {
+    console.log("📊 Getting subscription info for ID:", subscriptionId);
     
-    if (error.message.includes("insufficient funds")) {
-      console.log("\n💡 Solutions:");
-      console.log("- Get ETH from Sepolia faucet: https://sepoliafaucet.com/");
-      console.log("- Get LINK from Chainlink faucet: https://faucets.chain.link/sepolia");
+    const info = await vrfCoordinator.getSubscription(subscriptionId);
+    
+    console.log("📋 Subscription Details:");
+    console.log("- Balance:", ethers.formatEther(info.balance), "LINK");
+    console.log("- Request Count:", info.reqCount.toString());
+    console.log("- Owner:", info.owner);
+    console.log("- Consumers:", info.consumers.length);
+    
+    if (info.consumers.length > 0) {
+      console.log("  Consumer addresses:");
+      info.consumers.forEach((consumer, index) => {
+        console.log(`    ${index + 1}. ${consumer}`);
+      });
     }
+
+  } catch (error) {
+    console.error("❌ Error getting subscription info:", error.message);
+  }
+}
+
+async function addConsumer(vrfCoordinator) {
+  const subscriptionId = process.env.VRF_SUBSCRIPTION_ID;
+  const consumerAddress = process.env.CONSUMER_ADDRESS;
+  
+  if (!subscriptionId) {
+    console.log("❌ VRF_SUBSCRIPTION_ID not found in environment variables");
+    return;
+  }
+  
+  if (!consumerAddress) {
+    console.log("❌ CONSUMER_ADDRESS not found in environment variables");
+    return;
+  }
+
+  try {
+    console.log("➕ Adding consumer to subscription...");
+    console.log("- Subscription ID:", subscriptionId);
+    console.log("- Consumer Address:", consumerAddress);
+    
+    const tx = await vrfCoordinator.addConsumer(subscriptionId, consumerAddress);
+    console.log("📤 Transaction sent:", tx.hash);
+    
+    await tx.wait();
+    console.log("✅ Consumer added successfully!");
+
+  } catch (error) {
+    console.error("❌ Error adding consumer:", error.message);
+  }
+}
+
+async function removeConsumer(vrfCoordinator) {
+  const subscriptionId = process.env.VRF_SUBSCRIPTION_ID;
+  const consumerAddress = process.env.CONSUMER_ADDRESS;
+  
+  if (!subscriptionId) {
+    console.log("❌ VRF_SUBSCRIPTION_ID not found in environment variables");
+    return;
+  }
+  
+  if (!consumerAddress) {
+    console.log("❌ CONSUMER_ADDRESS not found in environment variables");
+    return;
+  }
+
+  try {
+    console.log("➖ Removing consumer from subscription...");
+    console.log("- Subscription ID:", subscriptionId);
+    console.log("- Consumer Address:", consumerAddress);
+    
+    const tx = await vrfCoordinator.removeConsumer(subscriptionId, consumerAddress);
+    console.log("📤 Transaction sent:", tx.hash);
+    
+    await tx.wait();
+    console.log("✅ Consumer removed successfully!");
+
+  } catch (error) {
+    console.error("❌ Error removing consumer:", error.message);
   }
 }
 

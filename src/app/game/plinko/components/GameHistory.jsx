@@ -10,10 +10,21 @@ export default function GameHistory({ history }) {
     return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
   };
   
-  // Open Etherscan link
-  const openEtherscan = (hash) => {
+  // Open Arbiscan link
+  const openArbiscan = (hash) => {
     if (hash) {
-      window.open(`${process.env.NEXT_PUBLIC_SEPOLIA_EXPLORER}/tx/${hash}`, '_blank');
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'arbitrum-sepolia';
+      let explorerUrl;
+      
+      if (network === 'arbitrum-sepolia') {
+        explorerUrl = `https://sepolia.arbiscan.io/tx/${hash}`;
+      } else if (network === 'arbitrum-one') {
+        explorerUrl = `https://arbiscan.io/tx/${hash}`;
+      } else {
+        explorerUrl = `https://sepolia.etherscan.io/tx/${hash}`;
+      }
+      
+      window.open(explorerUrl, '_blank');
     }
   };
 
@@ -98,9 +109,9 @@ export default function GameHistory({ history }) {
                           }
                         </span>
                         <button
-                          onClick={() => openEtherscan(game.vrfProof.transactionHash)}
+                          onClick={() => openArbiscan(game.vrfProof.transactionHash)}
                           className="text-blue-400 hover:text-blue-300 text-xs underline"
-                          title="View on Etherscan"
+                          title="View on Arbiscan"
                         >
                           TX
                         </button>
