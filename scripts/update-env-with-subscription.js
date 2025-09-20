@@ -24,3 +24,4 @@ try {
   console.error('❌ Error updating .env.local:', error.message);
 }
 
+
